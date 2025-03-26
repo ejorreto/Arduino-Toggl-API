@@ -54,8 +54,6 @@ const String Toggl::getUserData(String Input){
           String TMP_Str = doc["data"][Input];
           Output = TMP_Str;
           
-          doc.garbageCollect();
-          filter.garbageCollect();
 
       }
 
@@ -97,7 +95,7 @@ const String Toggl::StartTimeEntry(String const& Description, String const& Tags
       String TimeID = doc["data"]["id"];
 
       doc.clear();
-      doc.garbageCollect();
+
       https.end();
       
       return TimeID;
@@ -161,7 +159,7 @@ const String Toggl::CreateTimeEntry(String const& Description, String const& Tag
       String TimeID = doc["data"]["id"];
 
       doc.clear();
-      doc.garbageCollect();
+
       https.end();
       
       return TimeID;
@@ -193,7 +191,7 @@ const String Toggl::CreateTag(String const& Name, int const& WID){
       String output = doc["data"]["id"];
 
       doc.clear();
-      doc.garbageCollect();
+      // doc.garbageCollect(); // garbageCollect is not required in ArduinoJson v7
       https.end();
       
       return output;
@@ -236,8 +234,7 @@ const String Toggl::getWorkSpace(){
           Output += TmpName + "\n" + "\n";
 
         }
-        doc.garbageCollect();
-        filter.garbageCollect();
+
       }
 
       else{
@@ -286,8 +283,7 @@ const String Toggl::getProject(int const& WID){
           Output += TmpName + "\n" + "\n";
 
         }
-        doc.garbageCollect();
-        filter.garbageCollect();
+
       }
 
       else{
@@ -340,8 +336,7 @@ const String  Toggl::getTimerData(String Input){
 
           const String TMP_Str = doc["data"][Input];
           Output = TMP_Str;
-          doc.garbageCollect();
-          filter.garbageCollect();
+
 
       }
 
@@ -377,8 +372,7 @@ const uint32_t  Toggl::getCurrentTime(const String Timezone){
           deserializeJson(doc, http.getString(), DeserializationOption::Filter(filter));
 
           Output = doc["unixtime"];
-          doc.garbageCollect();
-          filter.garbageCollect();
+
 
       }
 
