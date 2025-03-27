@@ -54,7 +54,6 @@ public:
   const bool    isTimerActive();
 
   // General functionality
-  void init(const char * SSID, const char * PASS);
   void setAuth(String const & Token);
 
 private:
