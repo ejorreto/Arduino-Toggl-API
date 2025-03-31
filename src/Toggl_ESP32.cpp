@@ -1,24 +1,14 @@
-#if defined (ESP32)
+#if defined(ESP32)
 
 #include "Toggl.h"
 
-
-Toggl::Toggl(){
-
+Toggl::Toggl()
+{
 }
 
-
-void Toggl::init(const char* SSID,const char* PASS){
-
-  WiFi.begin(SSID, PASS);
-
-  while(WiFi.status() != WL_CONNECTED){
-    delay(100);
-  }
-
-}
-//Using built in ESP32 Base64 driver
-void Toggl::setAuth(String const& Token){
+// Using built in ESP32 Base64 driver
+void Toggl::setAuth(String const & Token)
+{
 
   String TokenHolder{Token + ":api_token"};
 
@@ -28,276 +18,246 @@ void Toggl::setAuth(String const& Token){
   return;
 }
 
+// Get user data
+const String Toggl::getUserData(String Input)
+{
 
-//Get user data
-const String Toggl::getUserData(String Input){
+  String  payload{};
+  String  Output{};
+  int16_t HTTP_Code{};
 
-  if ((WiFi.status() == WL_CONNECTED)) {
+  HTTPClient https;
+  https.begin(BaseUrl + "/me", root_ca);
+  https.addHeader("Authorization", AuthorizationKey);
 
-      String payload{};
-      String Output{};
-      int16_t HTTP_Code{};
+  HTTP_Code = https.GET();
 
-      HTTPClient https;
-      https.begin(BaseUrl + "/me", root_ca);
-      https.addHeader("Authorization", AuthorizationKey);
-      
-      HTTP_Code = https.GET();
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
+    StaticJsonDocument<80> filter;
+    filter["data"][Input] = true;
 
-      if (HTTP_Code >= 200 && HTTP_Code <= 226){
-          StaticJsonDocument<80> filter;
-          filter["data"][Input] = true;
+    DynamicJsonDocument doc(2 * JSON_OBJECT_SIZE(1) + 60);
+    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
 
-          DynamicJsonDocument doc(2*JSON_OBJECT_SIZE(1) + 60);
-          deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
-
-          String TMP_Str = doc["data"][Input];
-          Output = TMP_Str;
-          
-          doc.garbageCollect();
-          filter.garbageCollect();
-
-      }
-
-      else{ 
-           Output = ("Error: " + String(HTTP_Code));
-      }
-
-      https.end();
-      return Output;
+    String TMP_Str = doc["data"][Input];
+    Output         = TMP_Str;
   }
 
-}
-
-const String Toggl::StartTimeEntry(String const& Description, String const& Tags, int const& PID,String const& CreatedWith){
-
-  if ((WiFi.status() == WL_CONNECTED)) {
-
-      String payload;
-      
-      HTTPClient https;
-      https.begin(BaseUrl + "/time_entries/start", root_ca);
-      https.addHeader("Authorization", AuthorizationKey, true);
-      https.addHeader("Content-Type", " application/json");
-
-      DynamicJsonDocument doc(JSON_ARRAY_SIZE(1) +JSON_OBJECT_SIZE(5 + 1));
-
-      doc["time_entry"]["description"] = Description;
-      doc["time_entry"]["tags"] = Tags;
-      doc["time_entry"]["pid"] = PID;
-      doc["time_entry"]["created_with"] = CreatedWith;
-
-      serializeJson(doc, payload);
-
-      https.POST(payload);
-      doc.clear();
-
-      deserializeJson(doc, https.getString());
-
-      String TimeID = doc["data"]["id"];
-
-      doc.clear();
-      doc.garbageCollect();
-      https.end();
-      
-      return TimeID;
+  else
+  {
+    Output = ("Error: " + String(HTTP_Code));
   }
 
-}
-
-
-const String Toggl::StopTimeEntry(String const& ID){
-
-  String Output{};
-  
-  if ((WiFi.status() == WL_CONNECTED)) {
-
-      HTTPClient https;
-      https.begin(BaseUrl + "/time_entries/" + ID + "/stop", root_ca);
-      
-      https.addHeader("Authorization", AuthorizationKey, true);
-      https.addHeader("Content-Type", " application/json");
-      Output = String(https.PUT(" "));
-      https.end();
-      
-      //return https.errorToString(https.PUT(" ")); // Not sure why it never returns anything, just a blank
-
-      }
-
-  else{
-    Output = "Not connected to the internet";
-  }
+  https.end();
   return Output;
 }
 
+const String Toggl::StartTimeEntry(String const & Description, String const & Tags, int const & PID, String const & CreatedWith)
+{
 
-const String Toggl::CreateTimeEntry(String const& Description, String const& Tags, int const& Duration, String const& Start,  int const& PID, String const& CreatedWith){
+  String payload;
 
-  if ((WiFi.status() == WL_CONNECTED)) {
+  HTTPClient https;
+  https.begin(BaseUrl + "/time_entries/start", root_ca);
+  https.addHeader("Authorization", AuthorizationKey, true);
+  https.addHeader("Content-Type", " application/json");
 
-      String payload;
- 
-      HTTPClient https;
-      https.begin(BaseUrl + "/time_entries", root_ca);
-      https.addHeader("Authorization", AuthorizationKey, true);
-      https.addHeader("Content-Type", " application/json");
+  DynamicJsonDocument doc(JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(5 + 1));
 
-      DynamicJsonDocument doc(JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(6)+ 50);
+  doc["time_entry"]["description"]  = Description;
+  doc["time_entry"]["tags"]         = Tags;
+  doc["time_entry"]["pid"]          = PID;
+  doc["time_entry"]["created_with"] = CreatedWith;
 
-      doc["time_entry"]["description"] = Description;
-      doc["time_entry"]["tags"] = Tags;
-      doc["time_entry"]["duration"] = Duration;
-      doc["time_entry"]["start"] = Start;
-      doc["time_entry"]["pid"] = PID;
-      doc["time_entry"]["created_with"] = CreatedWith;
+  serializeJson(doc, payload);
 
-      serializeJson(doc, payload);
+  https.POST(payload);
+  doc.clear();
 
-      https.POST(payload);
-      doc.clear();
-      
-      deserializeJson(doc, https.getString());
-            
-      String TimeID = doc["data"]["id"];
+  deserializeJson(doc, https.getString());
 
-      doc.clear();
-      doc.garbageCollect();
-      https.end();
-      
-      return TimeID;
-  }
+  String TimeID = doc["data"]["id"];
+
+  doc.clear();
+
+  https.end();
+
+  return TimeID;
+
 }
 
+const String Toggl::StopTimeEntry(String const & ID)
+{
 
-const String Toggl::CreateTag(String const& Name, int const& WID){
+  String Output{};
 
-  if ((WiFi.status() == WL_CONNECTED)) {
+    HTTPClient https;
+    https.begin(BaseUrl + "/time_entries/" + ID + "/stop", root_ca);
 
-      String payload;
+    https.addHeader("Authorization", AuthorizationKey, true);
+    https.addHeader("Content-Type", " application/json");
+    Output = String(https.PUT(" "));
+    https.end();
 
-      HTTPClient https;
-      https.begin(BaseUrl + "/tags", root_ca);
-      https.addHeader("Authorization", AuthorizationKey, true);
-      https.addHeader("Content-Type", " application/json");
-      
-      DynamicJsonDocument doc(JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3));
+    // return https.errorToString(https.PUT(" ")); // Not sure why it never returns anything, just a blank
 
-      doc["tag"]["name"] = Name;
-      doc["tag"]["wid"] = WID;
-
-      serializeJson(doc, payload);
-
-      https.POST(payload);
-
-      deserializeJson(doc, https.getString());
-      String output = doc["data"]["id"];
-
-      doc.clear();
-      doc.garbageCollect();
-      https.end();
-      
-      return output;
-
-    }
+  return Output;
 }
 
-//Returns Workplace ID (WID)
-const String Toggl::getWorkSpace(){
+const String Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith)
+{
 
-  if ((WiFi.status() == WL_CONNECTED)) {
+    String payload;
 
-      String Output{};
-      uint16_t HTTP_Code{};
-      
-      HTTPClient https;
-      https.begin(BaseUrl + "/workspaces", root_ca);
-      https.addHeader("Authorization", AuthorizationKey, true);
+    HTTPClient https;
+    https.begin(BaseUrl + "/time_entries", root_ca);
+    https.addHeader("Authorization", AuthorizationKey, true);
+    https.addHeader("Content-Type", " application/json");
 
-      HTTP_Code = https.GET();
+    DynamicJsonDocument doc(JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(6) + 50);
 
-      if(HTTP_Code >= 200 && HTTP_Code <= 226){
+    doc["time_entry"]["description"]  = Description;
+    doc["time_entry"]["tags"]         = Tags;
+    doc["time_entry"]["duration"]     = Duration;
+    doc["time_entry"]["start"]        = Start;
+    doc["time_entry"]["pid"]          = PID;
+    doc["time_entry"]["created_with"] = CreatedWith;
 
-        DynamicJsonDocument doc(1024);
+    serializeJson(doc, payload);
+
+    https.POST(payload);
+    doc.clear();
+
+    deserializeJson(doc, https.getString());
+
+    String TimeID = doc["data"]["id"];
+
+    doc.clear();
+
+    https.end();
+
+    return TimeID;
   
-        StaticJsonDocument<50> filter;
-        filter[0]["id"] = true;
-        filter[0]["name"] = true;
-        
-        deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));     
-              
-        JsonArray arr = doc.as<JsonArray>();
-
-        for (JsonVariant value : arr) {        
-          
-          const int TmpID{value["id"]};
-          Output += TmpID;
-          Output += "\n";
-          String TmpName = value["name"];
-          Output += TmpName + "\n" + "\n";
-
-        }
-        doc.garbageCollect();
-        filter.garbageCollect();
-      }
-
-      else{
-        Output = ("Error: " + String(HTTP_Code));
-      }
-
-      https.end();
-      return Output;
-
-     }
 }
 
+const String Toggl::CreateTag(String const & Name, int const & WID)
+{
 
-const String Toggl::getProject(int const& WID){
-  
-  if ((WiFi.status() == WL_CONNECTED)) {
+    String payload;
 
-      String Output{};
-      uint16_t HTTP_Code{};
-      
+    HTTPClient https;
+    https.begin(BaseUrl + "/tags", root_ca);
+    https.addHeader("Authorization", AuthorizationKey, true);
+    https.addHeader("Content-Type", " application/json");
+
+    DynamicJsonDocument doc(JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3));
+
+    doc["tag"]["name"] = Name;
+    doc["tag"]["wid"]  = WID;
+
+    serializeJson(doc, payload);
+
+    https.POST(payload);
+
+    deserializeJson(doc, https.getString());
+    String output = doc["data"]["id"];
+
+    doc.clear();
+    // doc.garbageCollect(); // garbageCollect is not required in ArduinoJson v7
+    https.end();
+
+    return output;
+}
+
+// Returns Workplace ID (WID)
+const String Toggl::getWorkSpace()
+{
+
+    String   Output{};
+    uint16_t HTTP_Code{};
+
+    HTTPClient https;
+    https.begin(BaseUrl + "/workspaces", root_ca);
+    https.addHeader("Authorization", AuthorizationKey, true);
+
+    HTTP_Code = https.GET();
+
+    if (HTTP_Code >= 200 && HTTP_Code <= 226)
+    {
+
       DynamicJsonDocument doc(1024);
 
       StaticJsonDocument<50> filter;
-      filter[0]["id"] = true;
+      filter[0]["id"]   = true;
       filter[0]["name"] = true;
-      HTTPClient https;
-      https.begin("https://api.track.toggl.com/api/v8/workspaces/" + String(WID) + "/projects", root_ca);
-      https.addHeader("Authorization", AuthorizationKey, true);
 
-      HTTP_Code = https.GET();
+      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
 
-      if(HTTP_Code >= 200 && HTTP_Code <= 226){
-        
-        deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));     
-        
-        
-        JsonArray arr = doc.as<JsonArray>();
+      JsonArray arr = doc.as<JsonArray>();
 
+      for (JsonVariant value : arr)
+      {
 
-        for (JsonVariant value : arr) {        
-          
-          const int TmpID{value["id"]};
-          Output += TmpID;
-          Output += "\n";
-          String TmpName = value["name"];
-          Output += TmpName + "\n" + "\n";
-
-        }
-        doc.garbageCollect();
-        filter.garbageCollect();
+        const int TmpID{value["id"]};
+        Output += TmpID;
+        Output += "\n";
+        String TmpName = value["name"];
+        Output += TmpName + "\n" + "\n";
       }
+    }
 
-      else{
-        Output = ("Error: " + String(HTTP_Code));
+    else
+    {
+      Output = ("Error: " + String(HTTP_Code));
+    }
+
+    https.end();
+    return Output;
+}
+
+const String Toggl::getProject(int const & WID)
+{
+
+    String   Output{};
+    uint16_t HTTP_Code{};
+
+    DynamicJsonDocument doc(1024);
+
+    StaticJsonDocument<50> filter;
+    filter[0]["id"]   = true;
+    filter[0]["name"] = true;
+    HTTPClient https;
+    https.begin("https://api.track.toggl.com/api/v8/workspaces/" + String(WID) + "/projects", root_ca);
+    https.addHeader("Authorization", AuthorizationKey, true);
+
+    HTTP_Code = https.GET();
+
+    if (HTTP_Code >= 200 && HTTP_Code <= 226)
+    {
+
+      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
+
+      JsonArray arr = doc.as<JsonArray>();
+
+      for (JsonVariant value : arr)
+      {
+
+        const int TmpID{value["id"]};
+        Output += TmpID;
+        Output += "\n";
+        String TmpName = value["name"];
+        Output += TmpName + "\n" + "\n";
       }
+    }
 
-      https.end();
-      return Output;
+    else
+    {
+      Output = ("Error: " + String(HTTP_Code));
+    }
 
-     }
+    https.end();
+    return Output;
 }
 
 /*
@@ -305,254 +265,247 @@ const String Toggl::getProject(int const& WID){
 const int Toggl::getPID(String const& WID ,String const& ProjectName){
 
   int output{};
-  
+
   String TMP_String = getProject(WID);
 
   Serial.println(TMP_String);
-  
 
-  
+
+
   return output;
 }
 */
 
-const String  Toggl::getTimerData(String Input){
+const String Toggl::getTimerData(String Input)
+{
 
-  if ((WiFi.status() == WL_CONNECTED)) {
 
-      String payload{};
-      String Output{};
-      int16_t HTTP_Code{};
+    String  payload{};
+    String  Output{};
+    int16_t HTTP_Code{};
 
-      HTTPClient https;
-      https.begin("https://api.track.toggl.com/api/v8/time_entries/current",root_ca);
-      https.addHeader("Authorization", AuthorizationKey);
-      
-      HTTP_Code = https.GET();
+    HTTPClient https;
+    https.begin("https://api.track.toggl.com/api/v8/time_entries/current", root_ca);
+    https.addHeader("Authorization", AuthorizationKey);
 
-      if (HTTP_Code >= 200 && HTTP_Code <= 226){
-          StaticJsonDocument<46> filter;
-          filter["data"][Input] = true;
+    HTTP_Code = https.GET();
 
-          DynamicJsonDocument doc(JSON_OBJECT_SIZE(4));
+    if (HTTP_Code >= 200 && HTTP_Code <= 226)
+    {
+      StaticJsonDocument<46> filter;
+      filter["data"][Input] = true;
 
-          deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
+      DynamicJsonDocument doc(JSON_OBJECT_SIZE(4));
 
-          const String TMP_Str = doc["data"][Input];
-          Output = TMP_Str;
-          doc.garbageCollect();
-          filter.garbageCollect();
+      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
 
-      }
+      const String TMP_Str = doc["data"][Input];
+      Output               = TMP_Str;
+    }
 
-      else{ // To return the error instead of the data, no idea why the built in espHttpClient "errorToString" only returns blank space when a known error occurs...
-           Output = ("Error: " + String(HTTP_Code));
-      }
+    else
+    { // To return the error instead of the data, no idea why the built in espHttpClient "errorToString" only returns blank space when a known error occurs...
+      Output = ("Error: " + String(HTTP_Code));
+    }
 
-      https.end();
-      return Output;
-  }
+    https.end();
+    return Output;
 }
 
-//This got to go...
-const uint32_t  Toggl::getCurrentTime(const String Timezone){
+// This got to go...
+const String Toggl::getCurrentTime(const String Timezone)
+{
 
-  if ((WiFi.status() == WL_CONNECTED)) {
+  int16_t    HTTP_Code{};
+  String     Output{};
+  HTTPClient http;
 
-      int16_t HTTP_Code{};
-      uint32_t Output{};
-      HTTPClient http;
-      
-      http.begin("http://worldtimeapi.org/api/timezone/" + Timezone);
-    
-      HTTP_Code = http.GET();
-      
-      if (HTTP_Code >= 200 && HTTP_Code <= 226){
-          StaticJsonDocument<21> filter;
-          filter["unixtime"] = true;
+  http.begin("https://timeapi.io/api/time/current/zone?timeZone=" + Timezone, timeapi_io_ca);
 
-          const size_t capacity = JSON_OBJECT_SIZE(2);
-          DynamicJsonDocument doc(capacity);
+  HTTP_Code = http.GET();
 
-          deserializeJson(doc, http.getString(), DeserializationOption::Filter(filter));
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
+    StaticJsonDocument<46> filter;
+    filter["dateTime"] = true;
 
-          Output = doc["unixtime"];
-          doc.garbageCollect();
-          filter.garbageCollect();
+    const size_t        capacity = JSON_OBJECT_SIZE(4);
+    DynamicJsonDocument doc(capacity);
 
-      }
+    deserializeJson(doc, http.getString(), DeserializationOption::Filter(filter));
 
-      else{
-        HTTP_Code;
-      }
-
-      http.end();
-      return Output;
-      }
-}
-
-
-/*
- * Since the duration is in the epoch time format i need to convert it to regular secconds.
- * This is done by taking "current time" + "Duration" resulting in duration in secconds. 
- * 
- * The JSON request for getting the time when the timer started does not include the time zone....
- * 
- * This function makes me cry :'(
- */
-
-//Not even sure if i can do this properly. Il just use the World Time API for now...
-const int32_t Toggl::getTimerDuration(){
-  
-  uint32_t Output{};
-  const int32_t Duration = (getTimerData("duration")).toInt();
-
-  if (Duration < 0){
-    Output = getCurrentTime(getTimezone()) + Duration;
+    const String TMP_Str = doc["dateTime"];
+    Output               = TMP_Str;
   }
 
-  else{
-    Output = 0;
+  else
+  {
+    HTTP_Code;
   }
-  
+
+  http.end();
   return Output;
 }
 
-const bool Toggl::isTimerActive(){
+/*
+ * Since the duration is in the epoch time format i need to convert it to regular secconds.
+ * This is done by taking "current time" + "Duration" resulting in duration in secconds.
+ *
+ * The JSON request for getting the time when the timer started does not include the time zone....
+ *
+ * This function makes me cry :'(
+ */
+
+// Not even sure if i can do this properly. Il just use the World Time API for now...
+const int32_t Toggl::getTimerDuration()
+{
+
+  uint32_t      Output{};
+  const int32_t Duration = (getTimerData("duration")).toInt();
+
+  if (Duration < 0)
+  {
+    // Output = getCurrentTime(getTimezone()) + Duration;
+  }
+
+  else
+  {
+    Output = 0;
+  }
+
+  return Output;
+}
+
+const bool Toggl::isTimerActive()
+{
 
   bool output;
-  
-  String wid = getTimerData("wid"); //Just using a filter for less data.
 
-  if(wid != "null"){
+  String wid = getTimerData("wid"); // Just using a filter for less data.
+
+  if (wid != "null")
+  {
     output = true;
   }
-  
-  else{
+
+  else
+  {
     output = false;
   }
-  
+
   return output;
 }
 
-const String  Toggl::getTimerID(){
+const String Toggl::getTimerID()
+{
 
   return getTimerData("id");
-  
 }
 
+// ToDo: For all GET requests. Better memory handling
+// GET requests for user Data
 
+const uint16_t Toggl::getID()
+{
 
+  const uint16_t output = (getUserData("id")).toInt();
 
-//ToDo: For all GET requests. Better memory handling
-//GET requests for user Data
-
-const uint16_t Toggl::getID(){
-
-    const uint16_t output = (getUserData("id")).toInt();
-
-    return output;
+  return output;
 }
 
+const String Toggl::getApiToken()
+{
 
-const String Toggl::getApiToken(){
-
-    return getUserData("api_token");
-
+  return getUserData("api_token");
 }
 
+const uint16_t Toggl::getDefaultWid()
+{
 
-const uint16_t Toggl::getDefaultWid(){
+  const uint16_t output = (getUserData("default_wid")).toInt();
 
-    const uint16_t output = (getUserData("default_wid")).toInt();
-
-    return output;
-
+  return output;
 }
 
-const String Toggl::getEmail(){
+const String Toggl::getEmail()
+{
 
-    return getUserData("email");
+  return getUserData("email");
 }
 
+const String Toggl::getFullName()
+{
 
-const String Toggl::getFullName(){
-
-    return getUserData("fullname");
-
+  return getUserData("fullname");
 }
 
+const String Toggl::getJqTimeOfDayFormat()
+{
 
-const String Toggl::getJqTimeOfDayFormat(){
-
-    return getUserData("jquery_timeofday_format");
+  return getUserData("jquery_timeofday_format");
 }
 
+const String Toggl::getJqDateFormat()
+{
 
-const String Toggl::getJqDateFormat(){
-
-    return getUserData("jquery_date_format");
+  return getUserData("jquery_date_format");
 }
 
+const String Toggl::getTimeOfDayFormat()
+{
 
-const String Toggl::getTimeOfDayFormat(){
-
-    return getUserData("timeofday_format");
+  return getUserData("timeofday_format");
 }
 
+const String Toggl::getDateFormat()
+{
 
-const String Toggl::getDateFormat(){
-
-    return getUserData("date_format");
+  return getUserData("date_format");
 }
 
+const bool Toggl::getStoreStartAndStopTime()
+{
 
-const bool Toggl::getStoreStartAndStopTime(){
-
-    return getUserData("store_start_and_stop_time");
-
+  return getUserData("store_start_and_stop_time");
 }
 
+const uint16_t Toggl::getBeginningOfWeek()
+{
 
-const uint16_t Toggl::getBeginningOfWeek(){
+  // Not sure why a uint8_t creates a stack overflow
+  const uint16_t output = (getUserData("beginning_of_week")).toInt();
 
-    // Not sure why a uint8_t creates a stack overflow
-    const uint16_t output = (getUserData("beginning_of_week")).toInt();
-
-    return output;
-
+  return output;
 }
 
+const String Toggl::getLang()
+{
 
-const String Toggl::getLang(){
-
-    return getUserData("language");
-
+  return getUserData("language");
 }
 
+const String Toggl::getDurationFormat()
+{
 
-const String Toggl::getDurationFormat(){
-
-    return getUserData("duration_format");
+  return getUserData("duration_format");
 }
 
+const String Toggl::getAt()
+{
 
-const String Toggl::getAt(){
-
-    return getUserData("at");
-
+  return getUserData("at");
 }
 
+const String Toggl::getCreation()
+{
 
-const String Toggl::getCreation(){
-
-    return getUserData("created_at");
+  return getUserData("created_at");
 }
 
+const String Toggl::getTimezone()
+{
 
-const String Toggl::getTimezone(){
-
-    return getUserData("timezone");
+  return getUserData("timezone");
 }
 
 #endif
