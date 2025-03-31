@@ -365,7 +365,7 @@ const int32_t Toggl::getTimerDuration()
 
   if (Duration < 0)
   {
-    Output = getCurrentTime(getTimezone()) + Duration;
+    // Output = getCurrentTime(getTimezone()) + Duration;
   }
 
   else
