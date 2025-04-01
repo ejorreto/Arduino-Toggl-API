@@ -47,7 +47,7 @@ public:
     std::string getDescription() const { return description; }
     int getDuration() const { return duration; }
     bool isDuronly() const { return duronly; }
-    long int getId() const { return id; }
+    unsigned int getId() const { return id; }
     const std::vector<std::string>& getPermissions() const { return permissions; }
     int getPid() const { return pid; }
     bool isProjectActive() const { return project_active; }
