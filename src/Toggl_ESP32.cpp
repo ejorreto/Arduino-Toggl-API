@@ -84,7 +84,6 @@ const String Toggl::StartTimeEntry(String const & Description, String const & Ta
   https.end();
 
   return TimeID;
-
 }
 
 const String Toggl::StopTimeEntry(String const & ID)
@@ -105,159 +104,165 @@ const String Toggl::StopTimeEntry(String const & ID)
   return Output;
 }
 
-const String Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith)
+const String Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry)
 {
 
-    String payload;
+  String   payload;
+  uint16_t HTTP_Code{};
+  String   ret{};
 
-    HTTPClient https;
-    https.begin(BaseUrl + "/time_entries", root_ca);
+  HTTPClient https;
+  if (timeEntry != NULL)
+  {
+    https.begin(BaseUrl + "/workspaces/" + workspaceID + "/time_entries", root_ca);
     https.addHeader("Authorization", AuthorizationKey, true);
     https.addHeader("Content-Type", " application/json");
 
-    DynamicJsonDocument doc(JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(6) + 50);
+    JsonDocument doc;
 
-    doc["time_entry"]["description"]  = Description;
-    doc["time_entry"]["tags"]         = Tags;
-    doc["time_entry"]["duration"]     = Duration;
-    doc["time_entry"]["start"]        = Start;
-    doc["time_entry"]["pid"]          = PID;
-    doc["time_entry"]["created_with"] = CreatedWith;
+    doc["description"] = Description;
+    // doc["tags"]         = Tags;
+    doc["duration"] = Duration;
+    doc["start"]    = Start;
+    // doc["pid"]          = PID;
+    doc["created_with"] = CreatedWith;
+    doc["workspace_id"] = workspaceID;
 
     serializeJson(doc, payload);
 
-    https.POST(payload);
+    HTTP_Code = https.POST(payload);
     doc.clear();
-
+    ret       = String(std::to_string(HTTP_Code).c_str());
     deserializeJson(doc, https.getString());
-
-    String TimeID = doc["data"]["id"];
+    serializeJsonPretty(doc, Serial); // for debugging
+    unsigned int timeEntryId = doc["id"].as<unsigned int>();
+    timeEntry->setId(timeEntryId);
 
     doc.clear();
 
     https.end();
+  }
 
-    return TimeID;
-  
+  return ret;
 }
 
 const String Toggl::CreateTag(String const & Name, int const & WID)
 {
 
-    String payload;
+  String payload;
 
-    HTTPClient https;
-    https.begin(BaseUrl + "/tags", root_ca);
-    https.addHeader("Authorization", AuthorizationKey, true);
-    https.addHeader("Content-Type", " application/json");
+  HTTPClient https;
+  https.begin(BaseUrl + "/tags", root_ca);
+  https.addHeader("Authorization", AuthorizationKey, true);
+  https.addHeader("Content-Type", " application/json");
 
-    DynamicJsonDocument doc(JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3));
+  DynamicJsonDocument doc(JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3));
 
-    doc["tag"]["name"] = Name;
-    doc["tag"]["wid"]  = WID;
+  doc["tag"]["name"] = Name;
+  doc["tag"]["wid"]  = WID;
 
-    serializeJson(doc, payload);
+  serializeJson(doc, payload);
 
-    https.POST(payload);
+  https.POST(payload);
 
-    deserializeJson(doc, https.getString());
-    String output = doc["data"]["id"];
+  deserializeJson(doc, https.getString());
+  String output = doc["data"]["id"];
 
-    doc.clear();
-    // doc.garbageCollect(); // garbageCollect is not required in ArduinoJson v7
-    https.end();
+  doc.clear();
+  // doc.garbageCollect(); // garbageCollect is not required in ArduinoJson v7
+  https.end();
 
-    return output;
+  return output;
 }
 
 // Returns Workplace ID (WID)
 const String Toggl::getWorkSpace()
 {
 
-    String   Output{};
-    uint16_t HTTP_Code{};
+  String   Output{};
+  uint16_t HTTP_Code{};
 
-    HTTPClient https;
-    https.begin(BaseUrl + "/workspaces", root_ca);
-    https.addHeader("Authorization", AuthorizationKey, true);
+  HTTPClient https;
+  https.begin(BaseUrl + "/workspaces", root_ca);
+  https.addHeader("Authorization", AuthorizationKey, true);
 
-    HTTP_Code = https.GET();
+  HTTP_Code = https.GET();
 
-    if (HTTP_Code >= 200 && HTTP_Code <= 226)
-    {
-
-      DynamicJsonDocument doc(1024);
-
-      StaticJsonDocument<50> filter;
-      filter[0]["id"]   = true;
-      filter[0]["name"] = true;
-
-      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
-
-      JsonArray arr = doc.as<JsonArray>();
-
-      for (JsonVariant value : arr)
-      {
-
-        const int TmpID{value["id"]};
-        Output += TmpID;
-        Output += "\n";
-        String TmpName = value["name"];
-        Output += TmpName + "\n" + "\n";
-      }
-    }
-
-    else
-    {
-      Output = ("Error: " + String(HTTP_Code));
-    }
-
-    https.end();
-    return Output;
-}
-
-const String Toggl::getProject(int const & WID)
-{
-
-    String   Output{};
-    uint16_t HTTP_Code{};
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
 
     DynamicJsonDocument doc(1024);
 
     StaticJsonDocument<50> filter;
     filter[0]["id"]   = true;
     filter[0]["name"] = true;
-    HTTPClient https;
-    https.begin("https://api.track.toggl.com/api/v8/workspaces/" + String(WID) + "/projects", root_ca);
-    https.addHeader("Authorization", AuthorizationKey, true);
 
-    HTTP_Code = https.GET();
+    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
 
-    if (HTTP_Code >= 200 && HTTP_Code <= 226)
+    JsonArray arr = doc.as<JsonArray>();
+
+    for (JsonVariant value : arr)
     {
 
-      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
-
-      JsonArray arr = doc.as<JsonArray>();
-
-      for (JsonVariant value : arr)
-      {
-
-        const int TmpID{value["id"]};
-        Output += TmpID;
-        Output += "\n";
-        String TmpName = value["name"];
-        Output += TmpName + "\n" + "\n";
-      }
+      const int TmpID{value["id"]};
+      Output += TmpID;
+      Output += "\n";
+      String TmpName = value["name"];
+      Output += TmpName + "\n" + "\n";
     }
+  }
 
-    else
+  else
+  {
+    Output = ("Error: " + String(HTTP_Code));
+  }
+
+  https.end();
+  return Output;
+}
+
+const String Toggl::getProject(int const & WID)
+{
+
+  String   Output{};
+  uint16_t HTTP_Code{};
+
+  DynamicJsonDocument doc(1024);
+
+  StaticJsonDocument<50> filter;
+  filter[0]["id"]   = true;
+  filter[0]["name"] = true;
+  HTTPClient https;
+  https.begin("https://api.track.toggl.com/api/v8/workspaces/" + String(WID) + "/projects", root_ca);
+  https.addHeader("Authorization", AuthorizationKey, true);
+
+  HTTP_Code = https.GET();
+
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
+
+    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
+
+    JsonArray arr = doc.as<JsonArray>();
+
+    for (JsonVariant value : arr)
     {
-      Output = ("Error: " + String(HTTP_Code));
-    }
 
-    https.end();
-    return Output;
+      const int TmpID{value["id"]};
+      Output += TmpID;
+      Output += "\n";
+      String TmpName = value["name"];
+      Output += TmpName + "\n" + "\n";
+    }
+  }
+
+  else
+  {
+    Output = ("Error: " + String(HTTP_Code));
+  }
+
+  https.end();
+  return Output;
 }
 
 /*
@@ -279,37 +284,36 @@ const int Toggl::getPID(String const& WID ,String const& ProjectName){
 const String Toggl::getTimerData(String Input)
 {
 
+  String  payload{};
+  String  Output{};
+  int16_t HTTP_Code{};
 
-    String  payload{};
-    String  Output{};
-    int16_t HTTP_Code{};
+  HTTPClient https;
+  https.begin("https://api.track.toggl.com/api/v8/time_entries/current", root_ca);
+  https.addHeader("Authorization", AuthorizationKey);
 
-    HTTPClient https;
-    https.begin("https://api.track.toggl.com/api/v8/time_entries/current", root_ca);
-    https.addHeader("Authorization", AuthorizationKey);
+  HTTP_Code = https.GET();
 
-    HTTP_Code = https.GET();
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
+    StaticJsonDocument<46> filter;
+    filter["data"][Input] = true;
 
-    if (HTTP_Code >= 200 && HTTP_Code <= 226)
-    {
-      StaticJsonDocument<46> filter;
-      filter["data"][Input] = true;
+    DynamicJsonDocument doc(JSON_OBJECT_SIZE(4));
 
-      DynamicJsonDocument doc(JSON_OBJECT_SIZE(4));
+    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
 
-      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
+    const String TMP_Str = doc["data"][Input];
+    Output               = TMP_Str;
+  }
 
-      const String TMP_Str = doc["data"][Input];
-      Output               = TMP_Str;
-    }
+  else
+  { // To return the error instead of the data, no idea why the built in espHttpClient "errorToString" only returns blank space when a known error occurs...
+    Output = ("Error: " + String(HTTP_Code));
+  }
 
-    else
-    { // To return the error instead of the data, no idea why the built in espHttpClient "errorToString" only returns blank space when a known error occurs...
-      Output = ("Error: " + String(HTTP_Code));
-    }
-
-    https.end();
-    return Output;
+  https.end();
+  return Output;
 }
 
 // This got to go...

@@ -15,6 +15,7 @@
 #include "WiFi.h"
 #include <HTTPClient.h>
 #include <base64.h>
+#include "time_entry.h"
 
 class Toggl
 {
@@ -48,7 +49,7 @@ public:
   // Timer related functions
   const String  StartTimeEntry(String const & Description, String const & Tags, int const & PID, String const & CreatedWith);
   const String  StopTimeEntry(String const & ID);
-  const String  CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith);
+  const String  CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
   const int32_t getTimerDuration();
   const String  getTimerID();
   const bool    isTimerActive();
