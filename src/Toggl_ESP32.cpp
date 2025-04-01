@@ -86,22 +86,23 @@ const String Toggl::StartTimeEntry(String const & Description, String const & Ta
   return TimeID;
 }
 
-const String Toggl::StopTimeEntry(String const & ID)
+const String Toggl::StopTimeEntry(TimeEntry const timeEntry)
 {
 
-  String Output{};
+  String HTTP_Code{};
+  String workspaceId = String(timeEntry.getWorkspaceId());
+  String timeEntryId = String(timeEntry.getId());
 
-    HTTPClient https;
-    https.begin(BaseUrl + "/time_entries/" + ID + "/stop", root_ca);
+  HTTPClient https;
+  Serial.println("WID: " + workspaceId + " TimeEntryID: " + timeEntryId);
+  https.begin(BaseUrl + "/workspaces/" + workspaceId + "/time_entries/" + timeEntryId + "/stop", root_ca);
 
-    https.addHeader("Authorization", AuthorizationKey, true);
-    https.addHeader("Content-Type", " application/json");
-    Output = String(https.PUT(" "));
-    https.end();
+  https.addHeader("Authorization", AuthorizationKey, true);
+  https.addHeader("Content-Type", " application/json");
+  HTTP_Code = String(https.PATCH(" "));
+  https.end();
 
-    // return https.errorToString(https.PUT(" ")); // Not sure why it never returns anything, just a blank
-
-  return Output;
+  return HTTP_Code;
 }
 
 const String Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry)
@@ -132,11 +133,13 @@ const String Toggl::CreateTimeEntry(String const & Description, String const & T
 
     HTTP_Code = https.POST(payload);
     doc.clear();
-    ret       = String(std::to_string(HTTP_Code).c_str());
+    ret = String(std::to_string(HTTP_Code).c_str());
     deserializeJson(doc, https.getString());
     serializeJsonPretty(doc, Serial); // for debugging
     unsigned int timeEntryId = doc["id"].as<unsigned int>();
+    int workspaceID = doc["workspace_id"].as<int>();
     timeEntry->setId(timeEntryId);
+    timeEntry->setWorkspaceId(workspaceID);
 
     doc.clear();
 
