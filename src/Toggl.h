@@ -68,6 +68,9 @@ public:
    * @return const String 
    */
   const String  CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
+
+  const String GetCurrentTimeEntry(TimeEntry * timeEntry);
+  
   const int32_t getTimerDuration();
   const String  getTimerID();
   const bool    isTimerActive();

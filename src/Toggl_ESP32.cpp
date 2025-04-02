@@ -137,7 +137,7 @@ const String Toggl::CreateTimeEntry(String const & Description, String const & T
     deserializeJson(doc, https.getString());
     serializeJsonPretty(doc, Serial); // for debugging
     unsigned int timeEntryId = doc["id"].as<unsigned int>();
-    int workspaceID = doc["workspace_id"].as<int>();
+    int          workspaceID = doc["workspace_id"].as<int>();
     timeEntry->setId(timeEntryId);
     timeEntry->setWorkspaceId(workspaceID);
 
@@ -147,6 +147,31 @@ const String Toggl::CreateTimeEntry(String const & Description, String const & T
   }
 
   return ret;
+}
+
+const String Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
+{
+  // https://api.track.toggl.com/api/v9/me/time_entries/current
+  int HTTP_Code = 0;
+
+  HTTPClient https;
+  https.begin(BaseUrl + "/me/time_entries/current", root_ca);
+
+  https.addHeader("Authorization", AuthorizationKey, true);
+  https.addHeader("Content-Type", " application/json");
+  HTTP_Code = https.GET();
+
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
+
+    JsonDocument doc;
+
+    deserializeJson(doc, https.getString());
+    serializeJsonPretty(doc, Serial); // for debugging
+  }
+  https.end();
+
+  return String(HTTP_Code);
 }
 
 const String Toggl::CreateTag(String const & Name, int const & WID)
