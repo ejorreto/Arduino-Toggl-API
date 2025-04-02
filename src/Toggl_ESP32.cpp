@@ -21,7 +21,7 @@ void Toggl::setAuth(String const & Token)
 // Get user data
 const String Toggl::getUserData(String Input)
 {
-
+  // TODO: Not ported to API v9 yet
   String  payload{};
   String  Output{};
   int16_t HTTP_Code{};
@@ -55,7 +55,7 @@ const String Toggl::getUserData(String Input)
 
 const String Toggl::StartTimeEntry(String const & Description, String const & Tags, int const & PID, String const & CreatedWith)
 {
-
+  // TODO: Not ported to API v9 yet
   String payload;
 
   HTTPClient https;
@@ -175,7 +175,7 @@ const String Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
 
 const String Toggl::CreateTag(String const & Name, int const & WID)
 {
-
+  // TODO: Not ported to API v9 yet
   String payload;
 
   HTTPClient https;
@@ -205,7 +205,7 @@ const String Toggl::CreateTag(String const & Name, int const & WID)
 // Returns Workplace ID (WID)
 const String Toggl::getWorkSpace()
 {
-
+  // TODO: Not ported to API v9 yet
   String   Output{};
   uint16_t HTTP_Code{};
 
@@ -250,7 +250,7 @@ const String Toggl::getWorkSpace()
 
 const String Toggl::getProject(int const & WID)
 {
-
+  // TODO: Not ported to API v9 yet
   String   Output{};
   uint16_t HTTP_Code{};
 
@@ -292,25 +292,9 @@ const String Toggl::getProject(int const & WID)
   return Output;
 }
 
-/*
-//ToDo make the code somewhat nicer.
-const int Toggl::getPID(String const& WID ,String const& ProjectName){
-
-  int output{};
-
-  String TMP_String = getProject(WID);
-
-  Serial.println(TMP_String);
-
-
-
-  return output;
-}
-*/
-
 const String Toggl::getTimerData(String Input)
 {
-
+  // TODO: Not ported to API v9 yet
   String  payload{};
   String  Output{};
   int16_t HTTP_Code{};
@@ -390,7 +374,7 @@ const String Toggl::getCurrentTime(const String Timezone)
 // Not even sure if i can do this properly. Il just use the World Time API for now...
 const int32_t Toggl::getTimerDuration()
 {
-
+  // TODO: Not ported to API v9 yet
   uint32_t      Output{};
   const int32_t Duration = (getTimerData("duration")).toInt();
 
@@ -409,7 +393,7 @@ const int32_t Toggl::getTimerDuration()
 
 const bool Toggl::isTimerActive()
 {
-
+  // TODO: Not ported to API v9 yet
   bool output;
 
   String wid = getTimerData("wid"); // Just using a filter for less data.
@@ -429,7 +413,7 @@ const bool Toggl::isTimerActive()
 
 const String Toggl::getTimerID()
 {
-
+  // TODO: Not ported to API v9 yet
   return getTimerData("id");
 }
 
@@ -438,7 +422,7 @@ const String Toggl::getTimerID()
 
 const uint16_t Toggl::getID()
 {
-
+  // TODO: Not ported to API v9 yet
   const uint16_t output = (getUserData("id")).toInt();
 
   return output;
@@ -446,13 +430,13 @@ const uint16_t Toggl::getID()
 
 const String Toggl::getApiToken()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("api_token");
 }
 
 const uint16_t Toggl::getDefaultWid()
 {
-
+  // TODO: Not ported to API v9 yet
   const uint16_t output = (getUserData("default_wid")).toInt();
 
   return output;
@@ -460,49 +444,49 @@ const uint16_t Toggl::getDefaultWid()
 
 const String Toggl::getEmail()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("email");
 }
 
 const String Toggl::getFullName()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("fullname");
 }
 
 const String Toggl::getJqTimeOfDayFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("jquery_timeofday_format");
 }
 
 const String Toggl::getJqDateFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("jquery_date_format");
 }
 
 const String Toggl::getTimeOfDayFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("timeofday_format");
 }
 
 const String Toggl::getDateFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("date_format");
 }
 
 const bool Toggl::getStoreStartAndStopTime()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("store_start_and_stop_time");
 }
 
 const uint16_t Toggl::getBeginningOfWeek()
 {
-
+  // TODO: Not ported to API v9 yet
   // Not sure why a uint8_t creates a stack overflow
   const uint16_t output = (getUserData("beginning_of_week")).toInt();
 
@@ -511,31 +495,31 @@ const uint16_t Toggl::getBeginningOfWeek()
 
 const String Toggl::getLang()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("language");
 }
 
 const String Toggl::getDurationFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("duration_format");
 }
 
 const String Toggl::getAt()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("at");
 }
 
 const String Toggl::getCreation()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("created_at");
 }
 
 const String Toggl::getTimezone()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("timezone");
 }
 
