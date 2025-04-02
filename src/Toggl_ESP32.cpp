@@ -94,13 +94,14 @@ const String Toggl::StopTimeEntry(TimeEntry const timeEntry)
   String timeEntryId = String(timeEntry.getId());
 
   HTTPClient https;
-  Serial.println("WID: " + workspaceId + " TimeEntryID: " + timeEntryId);
   https.begin(BaseUrl + "/workspaces/" + workspaceId + "/time_entries/" + timeEntryId + "/stop", root_ca);
 
   https.addHeader("Authorization", AuthorizationKey, true);
   https.addHeader("Content-Type", " application/json");
   HTTP_Code = String(https.PATCH(" "));
   https.end();
+
+  // TODO: Check if the time entry was stopped correctly
 
   return HTTP_Code;
 }
@@ -135,11 +136,7 @@ const String Toggl::CreateTimeEntry(String const & Description, String const & T
     doc.clear();
     ret = String(std::to_string(HTTP_Code).c_str());
     deserializeJson(doc, https.getString());
-    serializeJsonPretty(doc, Serial); // for debugging
-    unsigned int timeEntryId = doc["id"].as<unsigned int>();
-    int          workspaceID = doc["workspace_id"].as<int>();
-    timeEntry->setId(timeEntryId);
-    timeEntry->setWorkspaceId(workspaceID);
+    timeEntry->fromJson(doc);
 
     doc.clear();
 
@@ -168,6 +165,8 @@ const String Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
 
     deserializeJson(doc, https.getString());
     serializeJsonPretty(doc, Serial); // for debugging
+    timeEntry->fromJson(doc);
+    doc.clear();  
   }
   https.end();
 

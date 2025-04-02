@@ -75,8 +75,8 @@ public:
     void setWorkspaceId(int value) { workspace_id = value; }
 
     // JSON serialization methods
-    void fromJson(const JsonObject& json);
-    void toJson(JsonObject& json) const;
+    void fromJson(const JsonDocument json);
+    void toJson(JsonDocument & json) const;
 };
 
 #endif // TIME_ENTRY_H
