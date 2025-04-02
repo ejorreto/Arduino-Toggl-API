@@ -46,9 +46,6 @@ public:
   // const int       getPID(String const& WID ,String const& ProjectName);
   const String CreateTag(String const & Name, int const & WID);
 
-  // Timer related functions
-  const String  StartTimeEntry(String const & Description, String const & Tags, int const & PID, String const & CreatedWith);
-
   /** Stop a time entry
    * @param timeEntry TimeEntry object to stop
    */

@@ -53,39 +53,6 @@ const String Toggl::getUserData(String Input)
   return Output;
 }
 
-const String Toggl::StartTimeEntry(String const & Description, String const & Tags, int const & PID, String const & CreatedWith)
-{
-  // TODO: Not ported to API v9 yet
-  String payload;
-
-  HTTPClient https;
-  https.begin(BaseUrl + "/time_entries/start", root_ca);
-  https.addHeader("Authorization", AuthorizationKey, true);
-  https.addHeader("Content-Type", " application/json");
-
-  DynamicJsonDocument doc(JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(5 + 1));
-
-  doc["time_entry"]["description"]  = Description;
-  doc["time_entry"]["tags"]         = Tags;
-  doc["time_entry"]["pid"]          = PID;
-  doc["time_entry"]["created_with"] = CreatedWith;
-
-  serializeJson(doc, payload);
-
-  https.POST(payload);
-  doc.clear();
-
-  deserializeJson(doc, https.getString());
-
-  String TimeID = doc["data"]["id"];
-
-  doc.clear();
-
-  https.end();
-
-  return TimeID;
-}
-
 const String Toggl::StopTimeEntry(TimeEntry const timeEntry)
 {
 
