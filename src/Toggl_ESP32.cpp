@@ -93,7 +93,7 @@ const String Toggl::CreateTimeEntry(String const & Description, String const & T
     // doc["tags"]         = Tags;
     doc["duration"] = Duration;
     doc["start"]    = Start;
-    // doc["pid"]          = PID;
+    doc["project_id"]          = PID;
     doc["created_with"] = CreatedWith;
     doc["workspace_id"] = workspaceID;
 
