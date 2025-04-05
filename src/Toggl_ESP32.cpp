@@ -21,7 +21,7 @@ void Toggl::setAuth(String const & Token)
 // Get user data
 const String Toggl::getUserData(String Input)
 {
-
+  // TODO: Not ported to API v9 yet
   String  payload{};
   String  Output{};
   int16_t HTTP_Code{};
@@ -53,263 +53,211 @@ const String Toggl::getUserData(String Input)
   return Output;
 }
 
-const String Toggl::StartTimeEntry(String const & Description, String const & Tags, int const & PID, String const & CreatedWith)
+const String Toggl::StopTimeEntry(TimeEntry const timeEntry)
 {
 
-  String payload;
+  String HTTP_Code{};
+  String workspaceId = String(timeEntry.getWorkspaceId());
+  String timeEntryId = String(timeEntry.getId());
 
   HTTPClient https;
-  https.begin(BaseUrl + "/time_entries/start", root_ca);
+  https.begin(BaseUrl + "/workspaces/" + workspaceId + "/time_entries/" + timeEntryId + "/stop", root_ca);
+
   https.addHeader("Authorization", AuthorizationKey, true);
   https.addHeader("Content-Type", " application/json");
-
-  DynamicJsonDocument doc(JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(5 + 1));
-
-  doc["time_entry"]["description"]  = Description;
-  doc["time_entry"]["tags"]         = Tags;
-  doc["time_entry"]["pid"]          = PID;
-  doc["time_entry"]["created_with"] = CreatedWith;
-
-  serializeJson(doc, payload);
-
-  https.POST(payload);
-  doc.clear();
-
-  deserializeJson(doc, https.getString());
-
-  String TimeID = doc["data"]["id"];
-
-  doc.clear();
-
+  HTTP_Code = String(https.PATCH(" "));
   https.end();
 
-  return TimeID;
+  // TODO: Check if the time entry was stopped correctly
 
+  return HTTP_Code;
 }
 
-const String Toggl::StopTimeEntry(String const & ID)
+const String Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry)
 {
 
-  String Output{};
+  String   payload;
+  uint16_t HTTP_Code{};
+  String   ret{};
 
-    HTTPClient https;
-    https.begin(BaseUrl + "/time_entries/" + ID + "/stop", root_ca);
-
-    https.addHeader("Authorization", AuthorizationKey, true);
-    https.addHeader("Content-Type", " application/json");
-    Output = String(https.PUT(" "));
-    https.end();
-
-    // return https.errorToString(https.PUT(" ")); // Not sure why it never returns anything, just a blank
-
-  return Output;
-}
-
-const String Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith)
-{
-
-    String payload;
-
-    HTTPClient https;
-    https.begin(BaseUrl + "/time_entries", root_ca);
+  HTTPClient https;
+  if (timeEntry != NULL)
+  {
+    https.begin(BaseUrl + "/workspaces/" + workspaceID + "/time_entries", root_ca);
     https.addHeader("Authorization", AuthorizationKey, true);
     https.addHeader("Content-Type", " application/json");
 
-    DynamicJsonDocument doc(JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(6) + 50);
+    JsonDocument doc;
 
-    doc["time_entry"]["description"]  = Description;
-    doc["time_entry"]["tags"]         = Tags;
-    doc["time_entry"]["duration"]     = Duration;
-    doc["time_entry"]["start"]        = Start;
-    doc["time_entry"]["pid"]          = PID;
-    doc["time_entry"]["created_with"] = CreatedWith;
+    doc["description"] = Description;
+    // doc["tags"]         = Tags;
+    doc["duration"]     = Duration;
+    doc["start"]        = Start;
+    doc["project_id"]   = PID;
+    doc["created_with"] = CreatedWith;
+    doc["workspace_id"] = workspaceID;
 
     serializeJson(doc, payload);
 
-    https.POST(payload);
+    HTTP_Code = https.POST(payload);
     doc.clear();
-
+    ret = String(std::to_string(HTTP_Code).c_str());
     deserializeJson(doc, https.getString());
-
-    String TimeID = doc["data"]["id"];
+    timeEntry->fromJson(doc);
 
     doc.clear();
 
     https.end();
+  }
 
-    return TimeID;
-  
+  return ret;
+}
+
+const String Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
+{
+  // https://api.track.toggl.com/api/v9/me/time_entries/current
+  int HTTP_Code = 0;
+
+  HTTPClient https;
+  https.begin(BaseUrl + "/me/time_entries/current", root_ca);
+
+  https.addHeader("Authorization", AuthorizationKey, true);
+  https.addHeader("Content-Type", " application/json");
+  HTTP_Code = https.GET();
+
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
+
+    JsonDocument doc;
+
+    deserializeJson(doc, https.getString());
+    serializeJsonPretty(doc, Serial); // for debugging
+    timeEntry->fromJson(doc);
+    Serial.println("Current time entry ID: " + String(timeEntry->getId()));
+    doc.clear();
+  }
+  https.end();
+
+  return String(HTTP_Code);
 }
 
 const String Toggl::CreateTag(String const & Name, int const & WID)
 {
+  // TODO: Not ported to API v9 yet
+  String payload;
 
-    String payload;
+  HTTPClient https;
+  https.begin(BaseUrl + "/tags", root_ca);
+  https.addHeader("Authorization", AuthorizationKey, true);
+  https.addHeader("Content-Type", " application/json");
 
-    HTTPClient https;
-    https.begin(BaseUrl + "/tags", root_ca);
-    https.addHeader("Authorization", AuthorizationKey, true);
-    https.addHeader("Content-Type", " application/json");
+  DynamicJsonDocument doc(JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3));
 
-    DynamicJsonDocument doc(JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3));
+  doc["tag"]["name"] = Name;
+  doc["tag"]["wid"]  = WID;
 
-    doc["tag"]["name"] = Name;
-    doc["tag"]["wid"]  = WID;
+  serializeJson(doc, payload);
 
-    serializeJson(doc, payload);
+  https.POST(payload);
 
-    https.POST(payload);
+  deserializeJson(doc, https.getString());
+  String output = doc["data"]["id"];
 
-    deserializeJson(doc, https.getString());
-    String output = doc["data"]["id"];
+  doc.clear();
+  // doc.garbageCollect(); // garbageCollect is not required in ArduinoJson v7
+  https.end();
 
-    doc.clear();
-    // doc.garbageCollect(); // garbageCollect is not required in ArduinoJson v7
-    https.end();
-
-    return output;
+  return output;
 }
 
 // Returns Workplace ID (WID)
 const String Toggl::getWorkSpace()
 {
+  // TODO: Not ported to API v9 yet
+  String   Output{};
+  uint16_t HTTP_Code{};
 
-    String   Output{};
-    uint16_t HTTP_Code{};
+  HTTPClient https;
+  https.begin(BaseUrl + "/workspaces", root_ca);
+  https.addHeader("Authorization", AuthorizationKey, true);
 
-    HTTPClient https;
-    https.begin(BaseUrl + "/workspaces", root_ca);
-    https.addHeader("Authorization", AuthorizationKey, true);
+  HTTP_Code = https.GET();
 
-    HTTP_Code = https.GET();
-
-    if (HTTP_Code >= 200 && HTTP_Code <= 226)
-    {
-
-      DynamicJsonDocument doc(1024);
-
-      StaticJsonDocument<50> filter;
-      filter[0]["id"]   = true;
-      filter[0]["name"] = true;
-
-      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
-
-      JsonArray arr = doc.as<JsonArray>();
-
-      for (JsonVariant value : arr)
-      {
-
-        const int TmpID{value["id"]};
-        Output += TmpID;
-        Output += "\n";
-        String TmpName = value["name"];
-        Output += TmpName + "\n" + "\n";
-      }
-    }
-
-    else
-    {
-      Output = ("Error: " + String(HTTP_Code));
-    }
-
-    https.end();
-    return Output;
-}
-
-const String Toggl::getProject(int const & WID)
-{
-
-    String   Output{};
-    uint16_t HTTP_Code{};
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
 
     DynamicJsonDocument doc(1024);
 
     StaticJsonDocument<50> filter;
     filter[0]["id"]   = true;
     filter[0]["name"] = true;
-    HTTPClient https;
-    https.begin("https://api.track.toggl.com/api/v8/workspaces/" + String(WID) + "/projects", root_ca);
-    https.addHeader("Authorization", AuthorizationKey, true);
 
-    HTTP_Code = https.GET();
+    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
 
-    if (HTTP_Code >= 200 && HTTP_Code <= 226)
+    JsonArray arr = doc.as<JsonArray>();
+
+    for (JsonVariant value : arr)
     {
 
-      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
-
-      JsonArray arr = doc.as<JsonArray>();
-
-      for (JsonVariant value : arr)
-      {
-
-        const int TmpID{value["id"]};
-        Output += TmpID;
-        Output += "\n";
-        String TmpName = value["name"];
-        Output += TmpName + "\n" + "\n";
-      }
+      const int TmpID{value["id"]};
+      Output += TmpID;
+      Output += "\n";
+      String TmpName = value["name"];
+      Output += TmpName + "\n" + "\n";
     }
+  }
 
-    else
-    {
-      Output = ("Error: " + String(HTTP_Code));
-    }
+  else
+  {
+    Output = ("Error: " + String(HTTP_Code));
+  }
 
-    https.end();
-    return Output;
+  https.end();
+  return Output;
 }
 
-/*
-//ToDo make the code somewhat nicer.
-const int Toggl::getPID(String const& WID ,String const& ProjectName){
-
-  int output{};
-
-  String TMP_String = getProject(WID);
-
-  Serial.println(TMP_String);
-
-
-
-  return output;
-}
-*/
-
-const String Toggl::getTimerData(String Input)
+const String Toggl::getProject(int const & WID)
 {
+  // TODO: Not ported to API v9 yet
+  String   Output{};
+  uint16_t HTTP_Code{};
 
+  DynamicJsonDocument doc(1024);
 
-    String  payload{};
-    String  Output{};
-    int16_t HTTP_Code{};
+  StaticJsonDocument<50> filter;
+  filter[0]["id"]   = true;
+  filter[0]["name"] = true;
+  HTTPClient https;
+  https.begin("https://api.track.toggl.com/api/v8/workspaces/" + String(WID) + "/projects", root_ca);
+  https.addHeader("Authorization", AuthorizationKey, true);
 
-    HTTPClient https;
-    https.begin("https://api.track.toggl.com/api/v8/time_entries/current", root_ca);
-    https.addHeader("Authorization", AuthorizationKey);
+  HTTP_Code = https.GET();
 
-    HTTP_Code = https.GET();
+  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  {
 
-    if (HTTP_Code >= 200 && HTTP_Code <= 226)
+    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
+
+    JsonArray arr = doc.as<JsonArray>();
+
+    for (JsonVariant value : arr)
     {
-      StaticJsonDocument<46> filter;
-      filter["data"][Input] = true;
 
-      DynamicJsonDocument doc(JSON_OBJECT_SIZE(4));
-
-      deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
-
-      const String TMP_Str = doc["data"][Input];
-      Output               = TMP_Str;
+      const int TmpID{value["id"]};
+      Output += TmpID;
+      Output += "\n";
+      String TmpName = value["name"];
+      Output += TmpName + "\n" + "\n";
     }
+  }
 
-    else
-    { // To return the error instead of the data, no idea why the built in espHttpClient "errorToString" only returns blank space when a known error occurs...
-      Output = ("Error: " + String(HTTP_Code));
-    }
+  else
+  {
+    Output = ("Error: " + String(HTTP_Code));
+  }
 
-    https.end();
-    return Output;
+  https.end();
+  return Output;
 }
 
 // This got to go...
@@ -347,59 +295,26 @@ const String Toggl::getCurrentTime(const String Timezone)
   return Output;
 }
 
-/*
- * Since the duration is in the epoch time format i need to convert it to regular secconds.
- * This is done by taking "current time" + "Duration" resulting in duration in secconds.
- *
- * The JSON request for getting the time when the timer started does not include the time zone....
- *
- * This function makes me cry :'(
- */
-
-// Not even sure if i can do this properly. Il just use the World Time API for now...
 const int32_t Toggl::getTimerDuration()
 {
-
-  uint32_t      Output{};
-  const int32_t Duration = (getTimerData("duration")).toInt();
-
-  if (Duration < 0)
-  {
-    // Output = getCurrentTime(getTimezone()) + Duration;
-  }
-
-  else
-  {
-    Output = 0;
-  }
-
-  return Output;
+  // TODO This should be calculated from the start time and current time
+  return 0;
 }
 
 const bool Toggl::isTimerActive()
 {
+  TimeEntry currentTimeEntry;
 
-  bool output;
+  (void)GetCurrentTimeEntry(&currentTimeEntry);
 
-  String wid = getTimerData("wid"); // Just using a filter for less data.
-
-  if (wid != "null")
-  {
-    output = true;
-  }
-
-  else
-  {
-    output = false;
-  }
-
-  return output;
+  return (currentTimeEntry.getId() != 0);
 }
 
-const String Toggl::getTimerID()
+unsigned int Toggl::getTimerID()
 {
-
-  return getTimerData("id");
+  TimeEntry currentTimeEntry;
+  GetCurrentTimeEntry(&currentTimeEntry);
+  return currentTimeEntry.getId();
 }
 
 // ToDo: For all GET requests. Better memory handling
@@ -407,7 +322,7 @@ const String Toggl::getTimerID()
 
 const uint16_t Toggl::getID()
 {
-
+  // TODO: Not ported to API v9 yet
   const uint16_t output = (getUserData("id")).toInt();
 
   return output;
@@ -415,13 +330,13 @@ const uint16_t Toggl::getID()
 
 const String Toggl::getApiToken()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("api_token");
 }
 
 const uint16_t Toggl::getDefaultWid()
 {
-
+  // TODO: Not ported to API v9 yet
   const uint16_t output = (getUserData("default_wid")).toInt();
 
   return output;
@@ -429,49 +344,49 @@ const uint16_t Toggl::getDefaultWid()
 
 const String Toggl::getEmail()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("email");
 }
 
 const String Toggl::getFullName()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("fullname");
 }
 
 const String Toggl::getJqTimeOfDayFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("jquery_timeofday_format");
 }
 
 const String Toggl::getJqDateFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("jquery_date_format");
 }
 
 const String Toggl::getTimeOfDayFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("timeofday_format");
 }
 
 const String Toggl::getDateFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("date_format");
 }
 
 const bool Toggl::getStoreStartAndStopTime()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("store_start_and_stop_time");
 }
 
 const uint16_t Toggl::getBeginningOfWeek()
 {
-
+  // TODO: Not ported to API v9 yet
   // Not sure why a uint8_t creates a stack overflow
   const uint16_t output = (getUserData("beginning_of_week")).toInt();
 
@@ -480,31 +395,31 @@ const uint16_t Toggl::getBeginningOfWeek()
 
 const String Toggl::getLang()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("language");
 }
 
 const String Toggl::getDurationFormat()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("duration_format");
 }
 
 const String Toggl::getAt()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("at");
 }
 
 const String Toggl::getCreation()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("created_at");
 }
 
 const String Toggl::getTimezone()
 {
-
+  // TODO: Not ported to API v9 yet
   return getUserData("timezone");
 }
 
