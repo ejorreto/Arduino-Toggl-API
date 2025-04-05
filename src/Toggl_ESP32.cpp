@@ -91,9 +91,9 @@ const String Toggl::CreateTimeEntry(String const & Description, String const & T
 
     doc["description"] = Description;
     // doc["tags"]         = Tags;
-    doc["duration"] = Duration;
-    doc["start"]    = Start;
-    doc["project_id"]          = PID;
+    doc["duration"]     = Duration;
+    doc["start"]        = Start;
+    doc["project_id"]   = PID;
     doc["created_with"] = CreatedWith;
     doc["workspace_id"] = workspaceID;
 
@@ -133,7 +133,8 @@ const String Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
     deserializeJson(doc, https.getString());
     serializeJsonPretty(doc, Serial); // for debugging
     timeEntry->fromJson(doc);
-    doc.clear();  
+    Serial.println("Current time entry ID: " + String(timeEntry->getId()));
+    doc.clear();
   }
   https.end();
 
@@ -259,41 +260,6 @@ const String Toggl::getProject(int const & WID)
   return Output;
 }
 
-const String Toggl::getTimerData(String Input)
-{
-  // TODO: Not ported to API v9 yet
-  String  payload{};
-  String  Output{};
-  int16_t HTTP_Code{};
-
-  HTTPClient https;
-  https.begin("https://api.track.toggl.com/api/v8/time_entries/current", root_ca);
-  https.addHeader("Authorization", AuthorizationKey);
-
-  HTTP_Code = https.GET();
-
-  if (HTTP_Code >= 200 && HTTP_Code <= 226)
-  {
-    StaticJsonDocument<46> filter;
-    filter["data"][Input] = true;
-
-    DynamicJsonDocument doc(JSON_OBJECT_SIZE(4));
-
-    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
-
-    const String TMP_Str = doc["data"][Input];
-    Output               = TMP_Str;
-  }
-
-  else
-  { // To return the error instead of the data, no idea why the built in espHttpClient "errorToString" only returns blank space when a known error occurs...
-    Output = ("Error: " + String(HTTP_Code));
-  }
-
-  https.end();
-  return Output;
-}
-
 // This got to go...
 const String Toggl::getCurrentTime(const String Timezone)
 {
@@ -329,59 +295,26 @@ const String Toggl::getCurrentTime(const String Timezone)
   return Output;
 }
 
-/*
- * Since the duration is in the epoch time format i need to convert it to regular secconds.
- * This is done by taking "current time" + "Duration" resulting in duration in secconds.
- *
- * The JSON request for getting the time when the timer started does not include the time zone....
- *
- * This function makes me cry :'(
- */
-
-// Not even sure if i can do this properly. Il just use the World Time API for now...
 const int32_t Toggl::getTimerDuration()
 {
-  // TODO: Not ported to API v9 yet
-  uint32_t      Output{};
-  const int32_t Duration = (getTimerData("duration")).toInt();
-
-  if (Duration < 0)
-  {
-    // Output = getCurrentTime(getTimezone()) + Duration;
-  }
-
-  else
-  {
-    Output = 0;
-  }
-
-  return Output;
+  // TODO This should be calculated from the start time and current time
+  return 0;
 }
 
 const bool Toggl::isTimerActive()
 {
-  // TODO: Not ported to API v9 yet
-  bool output;
+  TimeEntry currentTimeEntry;
 
-  String wid = getTimerData("wid"); // Just using a filter for less data.
+  (void)GetCurrentTimeEntry(&currentTimeEntry);
 
-  if (wid != "null")
-  {
-    output = true;
-  }
-
-  else
-  {
-    output = false;
-  }
-
-  return output;
+  return (currentTimeEntry.getId() != 0);
 }
 
-const String Toggl::getTimerID()
+unsigned int Toggl::getTimerID()
 {
-  // TODO: Not ported to API v9 yet
-  return getTimerData("id");
+  TimeEntry currentTimeEntry;
+  GetCurrentTimeEntry(&currentTimeEntry);
+  return currentTimeEntry.getId();
 }
 
 // ToDo: For all GET requests. Better memory handling

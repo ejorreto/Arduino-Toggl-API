@@ -75,7 +75,7 @@ public:
   const String GetCurrentTimeEntry(TimeEntry * timeEntry);
 
   const int32_t getTimerDuration();
-  const String  getTimerID();
+  unsigned int getTimerID();
   const bool    isTimerActive();
 
   // General functionality
@@ -84,7 +84,6 @@ public:
 
 private:
   const String getUserData(String Input);
-  const String getTimerData(String Input);
   String       AuthorizationKey{};
   const char * Fingerprint{"41c40c6a907d364b26d40d40d24f0c1b42f126da"}; // Fingerprint valid until 22 April 2021
   const char * root_ca =
