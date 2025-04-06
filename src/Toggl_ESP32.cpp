@@ -260,40 +260,6 @@ const String Toggl::getProject(int const & WID)
   return Output;
 }
 
-// This got to go...
-const String Toggl::getCurrentTime(const String Timezone)
-{
-
-  int16_t    HTTP_Code{};
-  String     Output{};
-  HTTPClient http;
-
-  http.begin("https://timeapi.io/api/time/current/zone?timeZone=" + Timezone, timeapi_io_ca);
-
-  HTTP_Code = http.GET();
-
-  if (HTTP_Code >= 200 && HTTP_Code <= 226)
-  {
-    StaticJsonDocument<46> filter;
-    filter["dateTime"] = true;
-
-    const size_t        capacity = JSON_OBJECT_SIZE(4);
-    DynamicJsonDocument doc(capacity);
-
-    deserializeJson(doc, http.getString(), DeserializationOption::Filter(filter));
-
-    const String TMP_Str = doc["dateTime"];
-    Output               = TMP_Str;
-  }
-
-  else
-  {
-    HTTP_Code;
-  }
-
-  http.end();
-  return Output;
-}
 
 const int32_t Toggl::getTimerDuration()
 {
