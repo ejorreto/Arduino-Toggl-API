@@ -173,7 +173,8 @@ const String Toggl::CreateTag(String const & Name, int const & WID)
 // Returns Workplace ID (WID)
 const String Toggl::getWorkSpace()
 {
-  // TODO: Not ported to API v9 yet
+  // https://api.track.toggl.com/api/v9/workspaces
+
   String   Output{};
   uint16_t HTTP_Code{};
 
@@ -186,24 +187,20 @@ const String Toggl::getWorkSpace()
   if (HTTP_Code >= 200 && HTTP_Code <= 226)
   {
 
-    DynamicJsonDocument doc(1024);
+    JsonDocument doc;
 
-    StaticJsonDocument<50> filter;
-    filter[0]["id"]   = true;
-    filter[0]["name"] = true;
+    deserializeJson(doc, https.getString());
+    serializeJsonPretty(doc, Serial); // for debugging
 
-    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
+    JsonArray data = doc.as<JsonArray>();
 
-    JsonArray arr = doc.as<JsonArray>();
-
-    for (JsonVariant value : arr)
+    for (JsonVariant item : data)
     {
-
-      const int TmpID{value["id"]};
-      Output += TmpID;
-      Output += "\n";
-      String TmpName = value["name"];
-      Output += TmpName + "\n" + "\n";
+      Workspace wrk;
+      wrk.fromJson(item);
+      Serial.println(wrk.getId());
+ 
+      Serial.println(String(wrk.getName().c_str()));
     }
   }
 
@@ -213,7 +210,7 @@ const String Toggl::getWorkSpace()
   }
 
   https.end();
-  return Output;
+  return String(HTTP_Code);
 }
 
 const String Toggl::getProject(int const & WID)

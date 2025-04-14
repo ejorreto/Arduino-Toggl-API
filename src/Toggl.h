@@ -14,6 +14,7 @@
 // Dependencies for ESP32
 #include "WiFi.h"
 #include "time_entry.h"
+#include "workspace.h"
 #include <HTTPClient.h>
 #include <base64.h>
 
