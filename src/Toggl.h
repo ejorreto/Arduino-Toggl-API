@@ -41,8 +41,16 @@ public:
   const String   getCreation();
   const String   getTimezone();
 
-  // Misc
-  const String getWorkSpace();
+  /**
+   * @brief Get the Workspaces for the current user
+   * 
+   * @param workspaces Array of Workspace objects to store the received workspaces
+   * @param maxNumWorkspaces Size of the array of Workspaces, max number of workspaces to use
+   * @param numWorkspacesReceived Number of workspaces received
+   * @return const String 
+   */
+  const String getWorkSpaces(Workspace * workspaces, int maxNumWorkspaces,  uint32_t * numWorkspacesReceived);
+  
   const String getProject(int const & WID);
   // const int       getPID(String const& WID ,String const& ProjectName);
   const String CreateTag(String const & Name, int const & WID);

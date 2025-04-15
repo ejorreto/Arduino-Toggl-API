@@ -170,13 +170,13 @@ const String Toggl::CreateTag(String const & Name, int const & WID)
   return output;
 }
 
-// Returns Workplace ID (WID)
-const String Toggl::getWorkSpace()
+const String Toggl::getWorkSpaces(Workspace * workspaces, int maxNumWorkspaces, uint32_t * numWorkspacesReceived)
 {
   // https://api.track.toggl.com/api/v9/workspaces
 
   String   Output{};
   uint16_t HTTP_Code{};
+  uint32_t currentWorkspace = 0;
 
   HTTPClient https;
   https.begin(BaseUrl + "/workspaces", root_ca);
@@ -190,18 +190,24 @@ const String Toggl::getWorkSpace()
     JsonDocument doc;
 
     deserializeJson(doc, https.getString());
-    serializeJsonPretty(doc, Serial); // for debugging
+    // serializeJsonPretty(doc, Serial); // for debugging
 
     JsonArray data = doc.as<JsonArray>();
+    Serial.println("Number of workspaces from data: " + String(data.size()));
 
     for (JsonVariant item : data)
     {
-      Workspace wrk;
-      wrk.fromJson(item);
-      Serial.println(wrk.getId());
- 
-      Serial.println(String(wrk.getName().c_str()));
+      if (currentWorkspace >= maxNumWorkspaces)
+      {
+        break;
+      }
+      workspaces[currentWorkspace].fromJson(item);
+
+      Serial.println("Workspace: " + String(workspaces[currentWorkspace].getName().c_str()));
+      currentWorkspace++;
     }
+
+    *numWorkspacesReceived = currentWorkspace;
   }
 
   else
@@ -256,7 +262,6 @@ const String Toggl::getProject(int const & WID)
   https.end();
   return Output;
 }
-
 
 const int32_t Toggl::getTimerDuration()
 {
