@@ -170,14 +170,25 @@ const String Toggl::CreateTag(String const & Name, int const & WID)
   return output;
 }
 
-// Returns Workplace ID (WID)
-const String Toggl::getWorkSpace()
+const String Toggl::getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces, uint32_t * numWorkspacesReceived)
 {
-  // TODO: Not ported to API v9 yet
+  // https://api.track.toggl.com/api/v9/workspaces
+
   String   Output{};
   uint16_t HTTP_Code{};
+  uint32_t currentWorkspace = 0;
 
   HTTPClient https;
+
+  if(workspaces == NULL)
+  {
+    return "Error: workspaces is NULL";
+  }
+  if(numWorkspacesReceived == NULL)
+  {
+    return "Error: numWorkspacesReceived is NULL";
+  }
+  
   https.begin(BaseUrl + "/workspaces", root_ca);
   https.addHeader("Authorization", AuthorizationKey, true);
 
@@ -186,25 +197,27 @@ const String Toggl::getWorkSpace()
   if (HTTP_Code >= 200 && HTTP_Code <= 226)
   {
 
-    DynamicJsonDocument doc(1024);
+    JsonDocument doc;
 
-    StaticJsonDocument<50> filter;
-    filter[0]["id"]   = true;
-    filter[0]["name"] = true;
+    deserializeJson(doc, https.getString());
+    // serializeJsonPretty(doc, Serial); // for debugging
 
-    deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
+    JsonArray data = doc.as<JsonArray>();
+    Serial.println("Number of workspaces from data: " + String(data.size()));
 
-    JsonArray arr = doc.as<JsonArray>();
-
-    for (JsonVariant value : arr)
+    for (JsonVariant item : data)
     {
+      if (currentWorkspace >= maxNumWorkspaces)
+      {
+        break;
+      }
+      workspaces[currentWorkspace].fromJson(item);
 
-      const int TmpID{value["id"]};
-      Output += TmpID;
-      Output += "\n";
-      String TmpName = value["name"];
-      Output += TmpName + "\n" + "\n";
+      Serial.println("Workspace: " + String(workspaces[currentWorkspace].getName().c_str()));
+      currentWorkspace++;
     }
+
+    *numWorkspacesReceived = currentWorkspace;
   }
 
   else
@@ -213,7 +226,7 @@ const String Toggl::getWorkSpace()
   }
 
   https.end();
-  return Output;
+  return String(HTTP_Code);
 }
 
 const String Toggl::getProject(int const & WID)
@@ -259,7 +272,6 @@ const String Toggl::getProject(int const & WID)
   https.end();
   return Output;
 }
-
 
 const int32_t Toggl::getTimerDuration()
 {
