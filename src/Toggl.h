@@ -49,7 +49,7 @@ public:
    * @param numWorkspacesReceived Number of workspaces received
    * @return const String 
    */
-  const String getWorkSpaces(Workspace * workspaces, int maxNumWorkspaces,  uint32_t * numWorkspacesReceived);
+  const String getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces,  uint32_t * numWorkspacesReceived);
   
   const String getProject(int const & WID);
   // const int       getPID(String const& WID ,String const& ProjectName);

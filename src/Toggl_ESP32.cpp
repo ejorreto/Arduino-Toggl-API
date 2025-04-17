@@ -170,7 +170,7 @@ const String Toggl::CreateTag(String const & Name, int const & WID)
   return output;
 }
 
-const String Toggl::getWorkSpaces(Workspace * workspaces, int maxNumWorkspaces, uint32_t * numWorkspacesReceived)
+const String Toggl::getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces, uint32_t * numWorkspacesReceived)
 {
   // https://api.track.toggl.com/api/v9/workspaces
 
@@ -179,6 +179,16 @@ const String Toggl::getWorkSpaces(Workspace * workspaces, int maxNumWorkspaces, 
   uint32_t currentWorkspace = 0;
 
   HTTPClient https;
+
+  if(workspaces == NULL)
+  {
+    return "Error: workspaces is NULL";
+  }
+  if(numWorkspacesReceived == NULL)
+  {
+    return "Error: numWorkspacesReceived is NULL";
+  }
+  
   https.begin(BaseUrl + "/workspaces", root_ca);
   https.addHeader("Authorization", AuthorizationKey, true);
 
