@@ -118,7 +118,6 @@ private:
   togglApiErrorCode_t httpCodeToErrorCode(int httpCode);
   const String        getUserData(String Input);
   String              AuthorizationKey{};
-  const char *        Fingerprint{"41c40c6a907d364b26d40d40d24f0c1b42f126da"}; // Fingerprint valid until 22 April 2021
   const char *        root_ca =
       "-----BEGIN CERTIFICATE-----\n"
       "MIIFVzCCAz+gAwIBAgINAgPlk28xsBNJiGuiFzANBgkqhkiG9w0BAQwFADBHMQsw\n"
