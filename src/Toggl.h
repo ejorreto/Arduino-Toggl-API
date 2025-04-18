@@ -61,14 +61,14 @@ public:
 
   /**
    * @brief Get the Workspaces for the current user
-   * 
+   *
    * @param workspaces Array of Workspace objects to store the received workspaces
    * @param maxNumWorkspaces Size of the array of Workspaces, max number of workspaces to use
    * @param numWorkspacesReceived Number of workspaces received
-   * @return const String 
+   * @return togglApiErrorCode_t
    */
-  const String getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces,  uint32_t * numWorkspacesReceived);
-  
+  togglApiErrorCode_t getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces, uint32_t * numWorkspacesReceived);
+
   const String getProject(int const & WID);
   // const int       getPID(String const& WID ,String const& ProjectName);
   const String CreateTag(String const & Name, int const & WID);
@@ -76,43 +76,50 @@ public:
   /** Stop a time entry
    * @param timeEntry TimeEntry object to stop
    */
-  const String  StopTimeEntry(TimeEntry const timeEntry);
+  const String StopTimeEntry(TimeEntry const timeEntry);
 
   /**
    * @brief Create a Time Entry object
-   * 
-   * @param Description 
-   * @param Tags 
+   *
+   * @param Description
+   * @param Tags
    * @param Duration Duration in seconds. Should be -1 for running timers
-   * @param Start 
-   * @param PID 
+   * @param Start
+   * @param PID
    * @param CreatedWith Name of the app that creates the time entry
-   * @param workspaceID 
-   * @param timeEntry 
-   * @return const String 
+   * @param workspaceID
+   * @param timeEntry
+   * @return const String
    */
-  const String  CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
+  const String CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
 
-/**
- * @brief Get the Current Time Entry object
- * 
- * @param timeEntry 
- * @return const String 
- */
+  /**
+   * @brief Get the Current Time Entry object
+   *
+   * @param timeEntry
+   * @return const String
+   */
   const String GetCurrentTimeEntry(TimeEntry * timeEntry);
 
   const int32_t getTimerDuration();
-  unsigned int getTimerID();
+  unsigned int  getTimerID();
   const bool    isTimerActive();
 
   // General functionality
-  void         setAuth(String const & Token);
+  void setAuth(String const & Token);
 
 private:
-  const String getUserData(String Input);
-  String       AuthorizationKey{};
-  const char * Fingerprint{"41c40c6a907d364b26d40d40d24f0c1b42f126da"}; // Fingerprint valid until 22 April 2021
-  const char * root_ca =
+  /**
+   * @brief Convert HTTP code to Toggl API error code
+   *
+   * @param httpCode
+   * @return togglApiErrorCode_t
+   */
+  togglApiErrorCode_t httpCodeToErrorCode(int httpCode);
+  const String        getUserData(String Input);
+  String              AuthorizationKey{};
+  const char *        Fingerprint{"41c40c6a907d364b26d40d40d24f0c1b42f126da"}; // Fingerprint valid until 22 April 2021
+  const char *        root_ca =
       "-----BEGIN CERTIFICATE-----\n"
       "MIIFVzCCAz+gAwIBAgINAgPlk28xsBNJiGuiFzANBgkqhkiG9w0BAQwFADBHMQsw\n"
       "CQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZpY2VzIExMQzEU\n"
@@ -145,7 +152,6 @@ private:
       "bP6MvPJwNQzcmRk13NfIRmPVNnGuV/u3gm3c\n"
       "-----END CERTIFICATE-----\n";
   const String BaseUrl = "https://api.track.toggl.com/api/v9";
-
 };
 
 #endif

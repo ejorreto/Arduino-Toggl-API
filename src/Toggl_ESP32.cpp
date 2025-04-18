@@ -170,63 +170,67 @@ const String Toggl::CreateTag(String const & Name, int const & WID)
   return output;
 }
 
-const String Toggl::getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces, uint32_t * numWorkspacesReceived)
+togglApiErrorCode_t Toggl::getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces, uint32_t * numWorkspacesReceived)
 {
-  // https://api.track.toggl.com/api/v9/workspaces
+  togglApiErrorCode_t errorCode = TOGGL_API_EC_OK;
+  uint16_t            HTTP_Code{};
+  uint32_t            workspaceIndex = 0;
+  HTTPClient          https;
 
-  String   Output{};
-  uint16_t HTTP_Code{};
-  uint32_t currentWorkspace = 0;
-
-  HTTPClient https;
-
-  if(workspaces == NULL)
+  if (workspaces == NULL || numWorkspacesReceived == NULL)
   {
-    return "Error: workspaces is NULL";
+    errorCode = TOGGL_API_EC_NULL_INPUT;
   }
-  if(numWorkspacesReceived == NULL)
-  {
-    return "Error: numWorkspacesReceived is NULL";
-  }
-  
-  https.begin(BaseUrl + "/workspaces", root_ca);
-  https.addHeader("Authorization", AuthorizationKey, true);
-
-  HTTP_Code = https.GET();
-
-  if (HTTP_Code >= 200 && HTTP_Code <= 226)
-  {
-
-    JsonDocument doc;
-
-    deserializeJson(doc, https.getString());
-    // serializeJsonPretty(doc, Serial); // for debugging
-
-    JsonArray data = doc.as<JsonArray>();
-    Serial.println("Number of workspaces from data: " + String(data.size()));
-
-    for (JsonVariant item : data)
-    {
-      if (currentWorkspace >= maxNumWorkspaces)
-      {
-        break;
-      }
-      workspaces[currentWorkspace].fromJson(item);
-
-      Serial.println("Workspace: " + String(workspaces[currentWorkspace].getName().c_str()));
-      currentWorkspace++;
-    }
-
-    *numWorkspacesReceived = currentWorkspace;
-  }
-
   else
   {
-    Output = ("Error: " + String(HTTP_Code));
+    https.begin(BaseUrl + "/workspaces", root_ca);
+    /* TODO process https.begin return code */
+    https.addHeader("Authorization", AuthorizationKey, true);
+
+    HTTP_Code = https.GET();
+
+    if (HTTP_Code == 200)
+    {
+      JsonDocument         doc;
+      DeserializationError jsonErrorCode = deserializeJson(doc, https.getString());
+      if (jsonErrorCode != DeserializationError::Ok)
+      {
+        Serial.println("Error deserializing JSON: " + String(jsonErrorCode.c_str()));
+        errorCode = TOGGL_API_EC_JSON_ERROR;
+      }
+      else
+      {
+        // serializeJsonPretty(doc, Serial); // for debugging
+        JsonArray data = doc.as<JsonArray>();
+        Serial.println("Number of workspaces received: " + String(data.size()));
+        /* TODO handle if the number of workspaces received is higher than maxNumWorkspaces */
+
+        for (JsonVariant item : data)
+        {
+          if (workspaceIndex >= maxNumWorkspaces)
+          {
+            break;
+          }
+          workspaces[workspaceIndex].fromJson(item);
+          Serial.println("Workspace received: " + String(workspaces[workspaceIndex].getName().c_str()));
+          
+          workspaceIndex++;
+        }
+
+        *numWorkspacesReceived = workspaceIndex;
+        errorCode              = TOGGL_API_EC_OK;
+      }
+    }
+    else
+    {
+      errorCode = httpCodeToErrorCode(HTTP_Code);
+    }
+
+    https.end();
   }
 
-  https.end();
-  return String(HTTP_Code);
+  Serial.println("getWorkSpaces error code: " + String(errorCode));
+  return errorCode;
 }
 
 const String Toggl::getProject(int const & WID)
@@ -399,6 +403,34 @@ const String Toggl::getTimezone()
 {
   // TODO: Not ported to API v9 yet
   return getUserData("timezone");
+}
+
+togglApiErrorCode_t Toggl::httpCodeToErrorCode(int httpCode)
+{
+  if (httpCode == 200)
+  {
+    return TOGGL_API_EC_OK;
+  }
+  else if (httpCode == 403)
+  {
+    return TOGGL_API_EC_FORBIDDEN;
+  }
+  else if (httpCode == 404)
+  {
+    return TOGGL_API_EC_NOT_FOUND;
+  }
+  else if (httpCode == 409)
+  {
+    return TOGGL_API_EC_ALREADY_STOPPED;
+  }
+  else if (httpCode == 500)
+  {
+    return TOGGL_API_EC_SERVER_ERROR;
+  }
+  else
+  {
+    return TOGGL_API_EC_UNKNOWN_ERROR;
+  }
 }
 
 #endif
