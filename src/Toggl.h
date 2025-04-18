@@ -33,7 +33,8 @@ typedef enum
   TOGGL_API_EC_UNKNOWN_ERROR,        /*!< Unknown error. */
   TOGGL_API_EC_NULL_INPUT,           /*!< Null input passed to the function */
   TOGGL_API_EC_NOT_PORTED_TO_API_V9, /*!< Function not ported to API v9 yet */
-  TOGGL_API_EC_JSON_ERROR            /*!< JSON error. Error serializing/deserializing data */
+  TOGGL_API_EC_JSON_ERROR,           /*!< JSON error. Error serializing/deserializing data */
+  TOGGL_API_EC_NO_CURRENT_TIME_ENTRY /*!< No currently running entry */
 } togglApiErrorCode_t;
 
 class Toggl
@@ -75,8 +76,9 @@ public:
 
   /** Stop a time entry
    * @param timeEntry TimeEntry object to stop
+   * @return togglApiErrorCode_t Error code
    */
-  togglApiErrorCode_t  StopTimeEntry(TimeEntry const timeEntry);
+  togglApiErrorCode_t StopTimeEntry(TimeEntry const timeEntry);
 
   /**
    * @brief Create a Time Entry object
@@ -96,10 +98,10 @@ public:
   /**
    * @brief Get the Current Time Entry object
    *
-   * @param timeEntry
-   * @return const String
+   * @param timeEntry TimeEntry to store the currently running time entry
+   * @return togglApiErrorCode_t Error code
    */
-  const String GetCurrentTimeEntry(TimeEntry * timeEntry);
+  togglApiErrorCode_t GetCurrentTimeEntry(TimeEntry * timeEntry);
 
   const int32_t getTimerDuration();
   unsigned int  getTimerID();
@@ -113,7 +115,7 @@ private:
    * @brief Convert HTTP code to Toggl API error code
    *
    * @param httpCode
-   * @return togglApiErrorCode_t
+   * @return togglApiErrorCode_t Error code
    */
   togglApiErrorCode_t httpCodeToErrorCode(int httpCode);
   const String        getUserData(String Input);

@@ -115,32 +115,55 @@ const String Toggl::CreateTimeEntry(String const & Description, String const & T
   return ret;
 }
 
-const String Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
+togglApiErrorCode_t Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
 {
-  // https://api.track.toggl.com/api/v9/me/time_entries/current
-  int HTTP_Code = 0;
-
+  togglApiErrorCode_t errorCode = TOGGL_API_EC_OK;
+  int                 HTTP_Code = 0;
   HTTPClient https;
+
   https.begin(BaseUrl + "/me/time_entries/current", root_ca);
+  /** @todo Process https.begin return value */
 
   https.addHeader("Authorization", AuthorizationKey, true);
   https.addHeader("Content-Type", " application/json");
   HTTP_Code = https.GET();
 
-  if (HTTP_Code >= 200 && HTTP_Code <= 226)
+  if (HTTP_Code == 200)
   {
+    JsonDocument         doc;
+    DeserializationError jsonErrorCode = deserializeJson(doc, https.getString());
+    if (jsonErrorCode != DeserializationError::Ok)
+    {
+      Serial.println("Error deserializing JSON: " + String(jsonErrorCode.c_str()));
+      errorCode = TOGGL_API_EC_JSON_ERROR;
+    }
+    else
+    {
+      if(doc.isNull())
+      {
+        doc.clear();
+        errorCode = TOGGL_API_EC_NO_CURRENT_TIME_ENTRY;
+      }
+      else
+      {
+        serializeJsonPretty(doc, Serial); // for debugging
+        timeEntry->fromJson(doc);
+        Serial.println("Current time entry ID: " + String(timeEntry->getId()));
+        doc.clear();
+        errorCode = TOGGL_API_EC_OK;
+      }
 
-    JsonDocument doc;
-
-    deserializeJson(doc, https.getString());
-    serializeJsonPretty(doc, Serial); // for debugging
-    timeEntry->fromJson(doc);
-    Serial.println("Current time entry ID: " + String(timeEntry->getId()));
-    doc.clear();
+    }
   }
+  else
+  {
+    errorCode = httpCodeToErrorCode(HTTP_Code);
+  }
+
   https.end();
 
-  return String(HTTP_Code);
+  Serial.println("GetCurrentTimeEntry error code: " + String(errorCode));
+  return errorCode;
 }
 
 const String Toggl::CreateTag(String const & Name, int const & WID)
@@ -300,9 +323,6 @@ unsigned int Toggl::getTimerID()
   GetCurrentTimeEntry(&currentTimeEntry);
   return currentTimeEntry.getId();
 }
-
-// ToDo: For all GET requests. Better memory handling
-// GET requests for user Data
 
 const uint16_t Toggl::getID()
 {
