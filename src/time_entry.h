@@ -13,7 +13,7 @@ private:
     std::string description;
     int duration;
     bool duronly;
-    unsigned int id;
+    unsigned int id = 0;
     std::vector<std::string> permissions;
     int pid;
     bool project_active;
