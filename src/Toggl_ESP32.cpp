@@ -53,24 +53,26 @@ const String Toggl::getUserData(String Input)
   return Output;
 }
 
-const String Toggl::StopTimeEntry(TimeEntry const timeEntry)
+togglApiErrorCode_t Toggl::StopTimeEntry(TimeEntry const timeEntry)
 {
-
-  String HTTP_Code{};
-  String workspaceId = String(timeEntry.getWorkspaceId());
-  String timeEntryId = String(timeEntry.getId());
+  togglApiErrorCode_t errorCode = TOGGL_API_EC_OK;
+  uint16_t            HTTP_Code{};
+  String              workspaceId = String(timeEntry.getWorkspaceId());
+  String              timeEntryId = String(timeEntry.getId());
 
   HTTPClient https;
   https.begin(BaseUrl + "/workspaces/" + workspaceId + "/time_entries/" + timeEntryId + "/stop", root_ca);
+  /* @todo Process https.begin return value */
 
   https.addHeader("Authorization", AuthorizationKey, true);
   https.addHeader("Content-Type", " application/json");
-  HTTP_Code = String(https.PATCH(" "));
+  HTTP_Code = https.PATCH(" ");
   https.end();
 
-  // TODO: Check if the time entry was stopped correctly
-
-  return HTTP_Code;
+  /* @todo: Check if the time entry was stopped correctly */
+  errorCode = httpCodeToErrorCode(HTTP_Code);
+  Serial.println("StopTimeEntry error code: " + String(errorCode));
+  return errorCode;
 }
 
 const String Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry)
@@ -213,7 +215,7 @@ togglApiErrorCode_t Toggl::getWorkSpaces(Workspace * workspaces, uint32_t maxNum
           }
           workspaces[workspaceIndex].fromJson(item);
           Serial.println("Workspace received: " + String(workspaces[workspaceIndex].getName().c_str()));
-          
+
           workspaceIndex++;
         }
 

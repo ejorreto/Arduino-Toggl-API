@@ -76,7 +76,7 @@ public:
   /** Stop a time entry
    * @param timeEntry TimeEntry object to stop
    */
-  const String StopTimeEntry(TimeEntry const timeEntry);
+  togglApiErrorCode_t  StopTimeEntry(TimeEntry const timeEntry);
 
   /**
    * @brief Create a Time Entry object
