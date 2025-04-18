@@ -18,6 +18,24 @@
 #include <HTTPClient.h>
 #include <base64.h>
 
+/**
+ * @brief Toggl API error codes
+ *
+ */
+typedef enum
+{
+  TOGGL_API_EC_OK = 0,               /*!< No errors. HTTP operation returned 200 */
+  TOGGL_API_EC_FORBIDDEN,            /*!< Forbidden. HTTP operation returned 403 */
+  TOGGL_API_EC_NOT_FOUND,            /*!< Not found. HTTP operation returned 404 */
+  TOGGL_API_EC_ALREADY_STOPPED,      /*!< Already stopped. HTTP operation returned 409 */
+  TOGGL_API_EC_SERVER_ERROR,         /*!< Server error. HTTP operation returned 500 */
+  TOGGL_API_EC_TOO_MANY_WORKSPACES,  /*!< Too many workspaces received for the allocated space */
+  TOGGL_API_EC_UNKNOWN_ERROR,        /*!< Unknown error. */
+  TOGGL_API_EC_NULL_INPUT,           /*!< Null input passed to the function */
+  TOGGL_API_EC_NOT_PORTED_TO_API_V9, /*!< Function not ported to API v9 yet */
+  TOGGL_API_EC_JSON_ERROR            /*!< JSON error. Error serializing/deserializing data */
+} togglApiErrorCode_t;
+
 class Toggl
 {
 public:
