@@ -43,22 +43,22 @@ public:
   Toggl();
 
   // Get the induvidual account settings/data
-  const uint16_t getID();
-  const String   getApiToken();
-  const uint16_t getDefaultWid();
-  const String   getEmail();
-  const String   getFullName();
-  const String   getJqTimeOfDayFormat();
-  const String   getJqDateFormat();
-  const String   getTimeOfDayFormat();
-  const String   getDateFormat();
-  const bool     getStoreStartAndStopTime();
-  const uint16_t getBeginningOfWeek();
-  const String   getLang();
-  const String   getDurationFormat();
-  const String   getAt();
-  const String   getCreation();
-  const String   getTimezone();
+  togglApiErrorCode_t getID();
+  togglApiErrorCode_t   getApiToken();
+  togglApiErrorCode_t getDefaultWid();
+  togglApiErrorCode_t   getEmail();
+  togglApiErrorCode_t   getFullName();
+  togglApiErrorCode_t   getJqTimeOfDayFormat();
+  togglApiErrorCode_t   getJqDateFormat();
+  togglApiErrorCode_t   getTimeOfDayFormat();
+  togglApiErrorCode_t   getDateFormat();
+  togglApiErrorCode_t     getStoreStartAndStopTime();
+  togglApiErrorCode_t getBeginningOfWeek();
+  togglApiErrorCode_t   getLang();
+  togglApiErrorCode_t   getDurationFormat();
+  togglApiErrorCode_t   getAt();
+  togglApiErrorCode_t   getCreation();
+  togglApiErrorCode_t   getTimezone();
 
   /**
    * @brief Get the Workspaces for the current user
@@ -70,9 +70,9 @@ public:
    */
   togglApiErrorCode_t getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces, uint32_t * numWorkspacesReceived);
 
-  const String getProject(int const & WID);
+  togglApiErrorCode_t getProject(int const & WID);
   // const int       getPID(String const& WID ,String const& ProjectName);
-  const String CreateTag(String const & Name, int const & WID);
+  togglApiErrorCode_t CreateTag(String const & Name, int const & WID);
 
   /** Stop a time entry
    * @param timeEntry TimeEntry object to stop
@@ -103,11 +103,15 @@ public:
    */
   togglApiErrorCode_t GetCurrentTimeEntry(TimeEntry * timeEntry);
 
-  const int32_t getTimerDuration();
-  unsigned int  getTimerID();
+  togglApiErrorCode_t getTimerDuration();
+  togglApiErrorCode_t  getTimerID();
   const bool    isTimerActive();
 
-  // General functionality
+  /**
+   * @brief Set the Toggl API token
+   * 
+   * @param Token 
+   */
   void setAuth(String const & Token);
 
 private:
@@ -118,7 +122,7 @@ private:
    * @return togglApiErrorCode_t Error code
    */
   togglApiErrorCode_t httpCodeToErrorCode(int httpCode);
-  const String        getUserData(String Input);
+  togglApiErrorCode_t        getUserData(String Input);
   String              AuthorizationKey{};
   const char *        root_ca =
       "-----BEGIN CERTIFICATE-----\n"
