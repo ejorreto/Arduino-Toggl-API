@@ -87,13 +87,13 @@ public:
    * @param Tags
    * @param Duration Duration in seconds. Should be -1 for running timers
    * @param Start
-   * @param PID
+   * @param projectID Project ID. Use -1 for no project
    * @param CreatedWith Name of the app that creates the time entry
    * @param workspaceID
    * @param timeEntry
    * @return const String
    */
-  togglApiErrorCode_t CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
+  togglApiErrorCode_t CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & projectID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
 
   /**
    * @brief Get the Current Time Entry object

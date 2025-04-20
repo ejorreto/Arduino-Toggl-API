@@ -77,7 +77,7 @@ togglApiErrorCode_t Toggl::StopTimeEntry(TimeEntry const timeEntry)
   return errorCode;
 }
 
-togglApiErrorCode_t Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry)
+togglApiErrorCode_t Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & projectID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry)
 {
   togglApiErrorCode_t errorCode = TOGGL_API_EC_OK;
   String              payload;
@@ -97,9 +97,10 @@ togglApiErrorCode_t Toggl::CreateTimeEntry(String const & Description, String co
     // doc["tags"]         = Tags;
     doc["duration"] = Duration;
     doc["start"]    = Start;
-    doc["duration"]     = Duration;
-    doc["start"]        = Start;
-    doc["project_id"]   = PID;
+    if (projectID >= 0)
+    {
+      doc["project_id"] = projectID;
+    }
     doc["created_with"] = CreatedWith;
     doc["workspace_id"] = workspaceID;
 
