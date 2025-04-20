@@ -10,7 +10,7 @@ Port of Toggl's official API v9 https://engineering.toggl.com/docs/
 
 ***Most used API features are implemented***
 
-This is a modification on the great work from Joey Strandnes porting of the Toggl API v8 to make it work with the v9. I'm moving to a class based implementation to allow integrating this library in bigger projects, and removing some functionalities that should not be handled by an API (like connection management, and time management.)
+This is a modification on the great work from Joey Strandnes porting of the Toggl API v8 to make it work with the v9. I'm moving to a class based implementation to allow integrating this library in bigger projects, and removing some functionalities that should not be handled by an API (e.g.: connection management, time management, etc...)
 
 This is currently a work in progress to add as much functionality as possible, merge requests are welcome to add the missing functions.
 

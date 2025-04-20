@@ -18,83 +18,113 @@
 #include <HTTPClient.h>
 #include <base64.h>
 
+/**
+ * @brief Toggl API error codes
+ *
+ */
+typedef enum
+{
+  TOGGL_API_EC_OK = 0,               /*!< No errors. HTTP operation returned 200 */
+  TOGGL_API_EC_FORBIDDEN,            /*!< Forbidden. HTTP operation returned 403 */
+  TOGGL_API_EC_NOT_FOUND,            /*!< Not found. HTTP operation returned 404 */
+  TOGGL_API_EC_ALREADY_STOPPED,      /*!< Already stopped. HTTP operation returned 409 */
+  TOGGL_API_EC_SERVER_ERROR,         /*!< Server error. HTTP operation returned 500 */
+  TOGGL_API_EC_TOO_MANY_WORKSPACES,  /*!< Too many workspaces received for the allocated space */
+  TOGGL_API_EC_UNKNOWN_ERROR,        /*!< Unknown error. */
+  TOGGL_API_EC_NULL_INPUT,           /*!< Null input passed to the function */
+  TOGGL_API_EC_NOT_PORTED_TO_API_V9, /*!< Function not ported to API v9 yet */
+  TOGGL_API_EC_JSON_ERROR,           /*!< JSON error. Error serializing/deserializing data */
+  TOGGL_API_EC_NO_CURRENT_TIME_ENTRY /*!< No currently running entry */
+} togglApiErrorCode_t;
+
 class Toggl
 {
 public:
   Toggl();
 
   // Get the induvidual account settings/data
-  const uint16_t getID();
-  const String   getApiToken();
-  const uint16_t getDefaultWid();
-  const String   getEmail();
-  const String   getFullName();
-  const String   getJqTimeOfDayFormat();
-  const String   getJqDateFormat();
-  const String   getTimeOfDayFormat();
-  const String   getDateFormat();
-  const bool     getStoreStartAndStopTime();
-  const uint16_t getBeginningOfWeek();
-  const String   getLang();
-  const String   getDurationFormat();
-  const String   getAt();
-  const String   getCreation();
-  const String   getTimezone();
+  togglApiErrorCode_t getID();
+  togglApiErrorCode_t   getApiToken();
+  togglApiErrorCode_t getDefaultWid();
+  togglApiErrorCode_t   getEmail();
+  togglApiErrorCode_t   getFullName();
+  togglApiErrorCode_t   getJqTimeOfDayFormat();
+  togglApiErrorCode_t   getJqDateFormat();
+  togglApiErrorCode_t   getTimeOfDayFormat();
+  togglApiErrorCode_t   getDateFormat();
+  togglApiErrorCode_t     getStoreStartAndStopTime();
+  togglApiErrorCode_t getBeginningOfWeek();
+  togglApiErrorCode_t   getLang();
+  togglApiErrorCode_t   getDurationFormat();
+  togglApiErrorCode_t   getAt();
+  togglApiErrorCode_t   getCreation();
+  togglApiErrorCode_t   getTimezone();
 
   /**
    * @brief Get the Workspaces for the current user
-   * 
+   *
    * @param workspaces Array of Workspace objects to store the received workspaces
    * @param maxNumWorkspaces Size of the array of Workspaces, max number of workspaces to use
    * @param numWorkspacesReceived Number of workspaces received
-   * @return const String 
+   * @return togglApiErrorCode_t
    */
-  const String getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces,  uint32_t * numWorkspacesReceived);
-  
-  const String getProject(int const & WID);
+  togglApiErrorCode_t getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces, uint32_t * numWorkspacesReceived);
+
+  togglApiErrorCode_t getProject(int const & WID);
   // const int       getPID(String const& WID ,String const& ProjectName);
-  const String CreateTag(String const & Name, int const & WID);
+  togglApiErrorCode_t CreateTag(String const & Name, int const & WID);
 
   /** Stop a time entry
    * @param timeEntry TimeEntry object to stop
+   * @return togglApiErrorCode_t Error code
    */
-  const String  StopTimeEntry(TimeEntry const timeEntry);
+  togglApiErrorCode_t StopTimeEntry(TimeEntry const timeEntry);
 
   /**
    * @brief Create a Time Entry object
-   * 
-   * @param Description 
-   * @param Tags 
+   *
+   * @param Description
+   * @param Tags
    * @param Duration Duration in seconds. Should be -1 for running timers
-   * @param Start 
-   * @param PID 
+   * @param Start
+   * @param PID
    * @param CreatedWith Name of the app that creates the time entry
-   * @param workspaceID 
-   * @param timeEntry 
-   * @return const String 
+   * @param workspaceID
+   * @param timeEntry
+   * @return const String
    */
-  const String  CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
+  togglApiErrorCode_t CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
 
-/**
- * @brief Get the Current Time Entry object
- * 
- * @param timeEntry 
- * @return const String 
- */
-  const String GetCurrentTimeEntry(TimeEntry * timeEntry);
+  /**
+   * @brief Get the Current Time Entry object
+   *
+   * @param timeEntry TimeEntry to store the currently running time entry
+   * @return togglApiErrorCode_t Error code
+   */
+  togglApiErrorCode_t GetCurrentTimeEntry(TimeEntry * timeEntry);
 
-  const int32_t getTimerDuration();
-  unsigned int getTimerID();
+  togglApiErrorCode_t getTimerDuration();
+  togglApiErrorCode_t  getTimerID();
   const bool    isTimerActive();
 
-  // General functionality
-  void         setAuth(String const & Token);
+  /**
+   * @brief Set the Toggl API token
+   * 
+   * @param Token 
+   */
+  void setAuth(String const & Token);
 
 private:
-  const String getUserData(String Input);
-  String       AuthorizationKey{};
-  const char * Fingerprint{"41c40c6a907d364b26d40d40d24f0c1b42f126da"}; // Fingerprint valid until 22 April 2021
-  const char * root_ca =
+  /**
+   * @brief Convert HTTP code to Toggl API error code
+   *
+   * @param httpCode
+   * @return togglApiErrorCode_t Error code
+   */
+  togglApiErrorCode_t httpCodeToErrorCode(int httpCode);
+  togglApiErrorCode_t        getUserData(String Input);
+  String              AuthorizationKey{};
+  const char *        root_ca =
       "-----BEGIN CERTIFICATE-----\n"
       "MIIFVzCCAz+gAwIBAgINAgPlk28xsBNJiGuiFzANBgkqhkiG9w0BAQwFADBHMQsw\n"
       "CQYDVQQGEwJVUzEiMCAGA1UEChMZR29vZ2xlIFRydXN0IFNlcnZpY2VzIExMQzEU\n"
@@ -127,7 +157,6 @@ private:
       "bP6MvPJwNQzcmRk13NfIRmPVNnGuV/u3gm3c\n"
       "-----END CERTIFICATE-----\n";
   const String BaseUrl = "https://api.track.toggl.com/api/v9";
-
 };
 
 #endif
