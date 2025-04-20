@@ -93,7 +93,7 @@ public:
    * @param timeEntry
    * @return const String
    */
-  const String CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
+  togglApiErrorCode_t CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry);
 
   /**
    * @brief Get the Current Time Entry object

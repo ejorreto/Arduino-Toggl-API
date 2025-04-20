@@ -75,17 +75,17 @@ togglApiErrorCode_t Toggl::StopTimeEntry(TimeEntry const timeEntry)
   return errorCode;
 }
 
-const String Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry)
+togglApiErrorCode_t Toggl::CreateTimeEntry(String const & Description, String const & Tags, int const & Duration, String const & Start, int const & PID, String const & CreatedWith, int workspaceID, TimeEntry * timeEntry)
 {
-
-  String   payload;
-  uint16_t HTTP_Code{};
-  String   ret{};
+  togglApiErrorCode_t errorCode = TOGGL_API_EC_OK;
+  String              payload;
+  uint16_t            HTTP_Code{};
 
   HTTPClient https;
   if (timeEntry != NULL)
   {
     https.begin(BaseUrl + "/workspaces/" + workspaceID + "/time_entries", root_ca);
+    /** @todo process https.begin return value */
     https.addHeader("Authorization", AuthorizationKey, true);
     https.addHeader("Content-Type", " application/json");
 
@@ -99,27 +99,53 @@ const String Toggl::CreateTimeEntry(String const & Description, String const & T
     doc["created_with"] = CreatedWith;
     doc["workspace_id"] = workspaceID;
 
-    serializeJson(doc, payload);
+    (void)serializeJson(doc, payload);
+    /** @todo process serializeJson return value, in case 0 bytes where written to doc */
 
     HTTP_Code = https.POST(payload);
-    doc.clear();
-    ret = String(std::to_string(HTTP_Code).c_str());
-    deserializeJson(doc, https.getString());
-    timeEntry->fromJson(doc);
-
-    doc.clear();
+    if (HTTP_Code == 200)
+    {
+      /* A new time entry was created successfully and returned, process it and save it in the output variable */
+      doc.clear();
+      DeserializationError jsonErrorCode = deserializeJson(doc, https.getString());
+      if (jsonErrorCode != DeserializationError::Ok)
+      {
+        Serial.println("Error deserializing JSON: " + String(jsonErrorCode.c_str()));
+        errorCode = TOGGL_API_EC_JSON_ERROR;
+      }
+      else
+      {
+        // serializeJsonPretty(doc, Serial); // for debugging
+        /** @todo check if doc is null? That would mean a null return from Toggl, that should not happen if http error code was 200 */
+        timeEntry->fromJson(doc);
+        Serial.println("Time entry created with ID: " + String(timeEntry->getId()));
+        errorCode = TOGGL_API_EC_OK;
+      }
+      doc.clear();
+    }
+    else
+    {
+      doc.clear();
+      Serial.println("Error creating time entry: " + String(HTTP_Code));
+      errorCode = httpCodeToErrorCode(HTTP_Code);
+    }
 
     https.end();
   }
+  else
+  {
+    errorCode = TOGGL_API_EC_NULL_INPUT;
+  }
 
-  return ret;
+  Serial.println("CreateTimeEntry error code: " + String(errorCode));
+  return errorCode;
 }
 
 togglApiErrorCode_t Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
 {
   togglApiErrorCode_t errorCode = TOGGL_API_EC_OK;
   int                 HTTP_Code = 0;
-  HTTPClient https;
+  HTTPClient          https;
 
   https.begin(BaseUrl + "/me/time_entries/current", root_ca);
   /** @todo Process https.begin return value */
@@ -139,7 +165,7 @@ togglApiErrorCode_t Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
     }
     else
     {
-      if(doc.isNull())
+      if (doc.isNull())
       {
         doc.clear();
         errorCode = TOGGL_API_EC_NO_CURRENT_TIME_ENTRY;
@@ -152,7 +178,6 @@ togglApiErrorCode_t Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
         doc.clear();
         errorCode = TOGGL_API_EC_OK;
       }
-
     }
   }
   else
