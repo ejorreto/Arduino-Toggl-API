@@ -12,10 +12,10 @@
 #include <ArduinoJson.h>
 
 // Dependencies for ESP32
-#include "WiFi.h"
+
 #include "time_entry.h"
 #include "workspace.h"
-#include <HTTPClient.h>
+#include "project.h"
 #include <base64.h>
 
 /**
@@ -70,7 +70,11 @@ public:
    */
   togglApiErrorCode_t getWorkSpaces(Workspace * workspaces, uint32_t maxNumWorkspaces, uint32_t * numWorkspacesReceived);
 
-  togglApiErrorCode_t getProject(int const & WID);
+  /** 
+   * @brief Get the projects for the current user in the selected workspace
+   */
+  togglApiErrorCode_t getProjects(Project* projects, uint32_t maxNumProjects, uint32_t* numProjectsReceived, int workspaceId);
+
   // const int       getPID(String const& WID ,String const& ProjectName);
   togglApiErrorCode_t CreateTag(String const & Name, int const & WID);
 
