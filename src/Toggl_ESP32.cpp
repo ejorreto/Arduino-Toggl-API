@@ -107,6 +107,7 @@ togglApiErrorCode_t Toggl::CreateTimeEntry(String const & Description, String co
     doc["workspace_id"] = workspaceID;
 
     (void)serializeJson(doc, payload);
+    // (void)serializeJsonPretty(doc, Serial); // for debugging
     /** @todo process serializeJson return value, in case 0 bytes where written to doc */
 
     HTTP_Code = https.POST(payload);
@@ -123,7 +124,7 @@ togglApiErrorCode_t Toggl::CreateTimeEntry(String const & Description, String co
       else
       {
         Serial.println("Time entry created successfully");
-        serializeJsonPretty(doc, Serial); // for debugging
+        // serializeJsonPretty(doc, Serial); // for debugging
         /** @todo check if doc is null? That would mean a null return from Toggl, that should not happen if http error code was 200 */
         timeEntry->fromJson(doc);
         Serial.println("Time entry created with ID: " + String(timeEntry->getId()));
@@ -180,7 +181,7 @@ togglApiErrorCode_t Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
       }
       else
       {
-        serializeJsonPretty(doc, Serial); // for debugging
+        // serializeJsonPretty(doc, Serial); // for debugging
         timeEntry->fromJson(doc);
         Serial.println("Current time entry ID: " + String(timeEntry->getId()));
         doc.clear();
@@ -261,7 +262,7 @@ togglApiErrorCode_t Toggl::getWorkSpaces(Workspace * workspaces, uint32_t maxNum
       }
       else
       {
-        // serializeJsonPretty(doc, Serial); // for debugging
+        // // serializeJsonPretty(doc, Serial); // for debugging
         JsonArray data = doc.as<JsonArray>();
         Serial.println("Number of workspaces received: " + String(data.size()));
         /* TODO handle if the number of workspaces received is higher than maxNumWorkspaces */
@@ -324,7 +325,7 @@ togglApiErrorCode_t Toggl::getProjects(Project* projects, uint32_t maxNumProject
       }
       else
       {
-        // serializeJsonPretty(doc, Serial); // for debugging
+        // // serializeJsonPretty(doc, Serial); // for debugging
         JsonArray data = doc.as<JsonArray>();
         Serial.println("Number of projects received: " + String(data.size()));
         /* TODO handle if the number of projects received is higher than maxNumProjects */
@@ -335,7 +336,7 @@ togglApiErrorCode_t Toggl::getProjects(Project* projects, uint32_t maxNumProject
           {
             break;
           }
-          serializeJsonPretty(doc, Serial); // for debugging
+          // serializeJsonPretty(doc, Serial); // for debugging
           projects[projectIndex].fromJson(item);
           Serial.println("Project received: " + String(projects[projectIndex].getName().c_str()));
 
