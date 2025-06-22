@@ -18,6 +18,8 @@ void TimeEntry::fromJson(const JsonDocument json) {
         if (json.containsKey("at")) at = json["at"].as<const char*>();
         if (json.containsKey("user_id")) user_id = json["user_id"].as<int>();
         if (json.containsKey("wid")) wid = json["wid"].as<int>();
+        if (json.containsKey("project_name") && !json["project_name"].isNull())
+            project_name = json["project_name"].as<const char*>();
     }
 }
 
@@ -38,4 +40,5 @@ void TimeEntry::toJson(JsonDocument & json) const {
     json["at"] = at;
     json["user_id"] = user_id;
     json["wid"] = wid;
+    json["project_name"] = project_name;
 }

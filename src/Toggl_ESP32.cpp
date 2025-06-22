@@ -1,5 +1,7 @@
 #if defined(ESP32)
 
+#include <HTTPClient.h>
+
 #include "Toggl.h"
 
 Toggl::Toggl()
@@ -105,6 +107,7 @@ togglApiErrorCode_t Toggl::CreateTimeEntry(String const & Description, String co
     doc["workspace_id"] = workspaceID;
 
     (void)serializeJson(doc, payload);
+    // (void)serializeJsonPretty(doc, Serial); // for debugging
     /** @todo process serializeJson return value, in case 0 bytes where written to doc */
 
     HTTP_Code = https.POST(payload);
@@ -120,6 +123,7 @@ togglApiErrorCode_t Toggl::CreateTimeEntry(String const & Description, String co
       }
       else
       {
+        Serial.println("Time entry created successfully");
         // serializeJsonPretty(doc, Serial); // for debugging
         /** @todo check if doc is null? That would mean a null return from Toggl, that should not happen if http error code was 200 */
         timeEntry->fromJson(doc);
@@ -177,7 +181,7 @@ togglApiErrorCode_t Toggl::GetCurrentTimeEntry(TimeEntry * timeEntry)
       }
       else
       {
-        serializeJsonPretty(doc, Serial); // for debugging
+        // serializeJsonPretty(doc, Serial); // for debugging
         timeEntry->fromJson(doc);
         Serial.println("Current time entry ID: " + String(timeEntry->getId()));
         doc.clear();
@@ -258,7 +262,7 @@ togglApiErrorCode_t Toggl::getWorkSpaces(Workspace * workspaces, uint32_t maxNum
       }
       else
       {
-        // serializeJsonPretty(doc, Serial); // for debugging
+        // // serializeJsonPretty(doc, Serial); // for debugging
         JsonArray data = doc.as<JsonArray>();
         Serial.println("Number of workspaces received: " + String(data.size()));
         /* TODO handle if the number of workspaces received is higher than maxNumWorkspaces */
@@ -291,49 +295,68 @@ togglApiErrorCode_t Toggl::getWorkSpaces(Workspace * workspaces, uint32_t maxNum
   return errorCode;
 }
 
-togglApiErrorCode_t Toggl::getProject(int const & WID)
+togglApiErrorCode_t Toggl::getProjects(Project* projects, uint32_t maxNumProjects, uint32_t* numProjectsReceived, int workspaceId)
 {
-  /** @todo TODO: Not ported to API v9 yet */
-  return TOGGL_API_EC_NOT_PORTED_TO_API_V9;
-  // String   Output{};
-  // uint16_t HTTP_Code{};
+  togglApiErrorCode_t errorCode = TOGGL_API_EC_OK;
+  uint16_t            HTTP_Code{};
+  uint32_t            projectIndex = 0;
+  HTTPClient          https;
 
-  // DynamicJsonDocument doc(1024);
+  if (projects == NULL || numProjectsReceived == NULL)
+  {
+    errorCode = TOGGL_API_EC_NULL_INPUT;
+  }
+  else
+  {
+    https.begin(BaseUrl + "/workspaces/" + String(workspaceId) + "/projects", root_ca);
+    /* TODO process https.begin return code */
+    https.addHeader("Authorization", AuthorizationKey, true);
 
-  // StaticJsonDocument<50> filter;
-  // filter[0]["id"]   = true;
-  // filter[0]["name"] = true;
-  // HTTPClient https;
-  // https.begin("https://api.track.toggl.com/api/v8/workspaces/" + String(WID) + "/projects", root_ca);
-  // https.addHeader("Authorization", AuthorizationKey, true);
+    HTTP_Code = https.GET();
 
-  // HTTP_Code = https.GET();
+    if (HTTP_Code == 200)
+    {
+      JsonDocument         doc;
+      DeserializationError jsonErrorCode = deserializeJson(doc, https.getString());
+      if (jsonErrorCode != DeserializationError::Ok)
+      {
+        Serial.println("Error deserializing JSON: " + String(jsonErrorCode.c_str()));
+        errorCode = TOGGL_API_EC_JSON_ERROR;
+      }
+      else
+      {
+        // // serializeJsonPretty(doc, Serial); // for debugging
+        JsonArray data = doc.as<JsonArray>();
+        Serial.println("Number of projects received: " + String(data.size()));
+        /* TODO handle if the number of projects received is higher than maxNumProjects */
 
-  // if (HTTP_Code >= 200 && HTTP_Code <= 226)
-  // {
+        for (JsonVariant item : data)
+        {
+          if (projectIndex >= maxNumProjects)
+          {
+            break;
+          }
+          // serializeJsonPretty(doc, Serial); // for debugging
+          projects[projectIndex].fromJson(item);
+          Serial.println("Project received: " + String(projects[projectIndex].getName().c_str()));
 
-  //   deserializeJson(doc, https.getString(), DeserializationOption::Filter(filter));
+          projectIndex++;
+        }
 
-  //   JsonArray arr = doc.as<JsonArray>();
+        *numProjectsReceived = projectIndex;
+        errorCode           = TOGGL_API_EC_OK;
+      }
+    }
+    else
+    {
+      errorCode = httpCodeToErrorCode(HTTP_Code);
+    }
 
-  //   for (JsonVariant value : arr)
-  //   {
+    https.end();
+  }
 
-  //     const int TmpID{value["id"]};
-  //     Output += TmpID;
-  //     Output += "\n";
-  //     String TmpName = value["name"];
-  //     Output += TmpName + "\n" + "\n";
-  //   }
-  // }
-
-  // else
-  // {
-  //   Output = ("Error: " + String(HTTP_Code));
-  // }
-
-  // https.end();
-  // return Output;
+  Serial.println("getProjects error code: " + String(errorCode));
+  return errorCode;
 }
 
 togglApiErrorCode_t Toggl::getTimerDuration()

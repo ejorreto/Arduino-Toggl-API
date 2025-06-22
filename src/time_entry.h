@@ -73,6 +73,8 @@ public:
     void setStart(const std::string& value) { start = value; }
     void setStop(const std::string& value) { stop = value; }
     void setWorkspaceId(int value) { workspace_id = value; }
+    void setProjectName(const std::string& value) { project_name = value; }
+
 
     // JSON serialization methods
     void fromJson(const JsonDocument json);
